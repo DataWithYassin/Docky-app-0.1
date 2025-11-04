@@ -1,11 +1,13 @@
 import React from 'react';
 import { UserType } from '../types';
+import { GoogleIcon, FacebookIcon } from './Icons';
 
 interface LoginViewProps {
   onLogin: (userType: UserType) => void;
+  onAdminLogin: () => void;
 }
 
-const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
+const LoginView: React.FC<LoginViewProps> = ({ onLogin, onAdminLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +74,42 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             </div>
           </div>
         </form>
+
+        <div className="relative mt-6">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-slate-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-slate-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <button
+                type="button"
+                onClick={() => {}}
+                className="w-full inline-flex justify-center items-center gap-2 py-2 px-4 border border-slate-300 rounded-md shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                <span className="sr-only">Sign in with Google</span>
+                <GoogleIcon className="w-5 h-5" />
+                Google
+                </button>
+            </div>
+            <div>
+                <button
+                type="button"
+                onClick={() => {}}
+                className="w-full inline-flex justify-center items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1877F2] hover:bg-[#166FE5]"
+                >
+                <span className="sr-only">Sign in with Facebook</span>
+                <FacebookIcon className="w-5 h-5" />
+                Facebook
+                </button>
+            </div>
+        </div>
+
+
         <div className="mt-6 space-y-4">
             <p className="text-center text-sm text-slate-500">For demonstration purposes:</p>
             <button
@@ -85,6 +123,12 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-accent hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
             >
               Log In as Business (The Local Cafe)
+            </button>
+            <button
+              onClick={onAdminLogin}
+              className="w-full flex justify-center py-3 px-4 border border-slate-300 rounded-full shadow-sm text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+            >
+              Log In as Admin
             </button>
         </div>
       </div>

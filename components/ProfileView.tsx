@@ -1,9 +1,13 @@
 import React from 'react';
-import { User, Experience, Review as ReviewType } from '../types';
+import { User, Experience, Review as ReviewType, Chat, Shift } from '../types';
 import { StarIcon, LocationIcon, BriefcaseIcon, PencilIcon, VerificationIcon } from './Icons';
 
 interface ProfileViewProps {
   user: User;
+  chats?: Chat[];
+  shifts?: Shift[];
+  allUsers?: User[];
+  onOpenChat?: (chatId: string) => void;
 }
 
 const ProfileHeader: React.FC<{ user: User }> = ({ user }) => (
@@ -45,11 +49,11 @@ const ProfileHeader: React.FC<{ user: User }> = ({ user }) => (
   </div>
 );
 
-const AboutSection: React.FC<{ bio?: string }> = ({ bio }) => (
-  bio ? (
+const AboutSection: React.FC<{ user: User }> = ({ user }) => (
+  user.bio ? (
     <div className="p-6">
-      <h3 className="text-xl font-bold text-primary mb-3">About Me</h3>
-      <p className="text-slate-700 leading-relaxed">{bio}</p>
+      <h3 className="text-xl font-bold text-primary mb-3">About {user.userType === 'JobSeeker' ? 'Me' : user.name}</h3>
+      <p className="text-slate-700 leading-relaxed">{user.bio}</p>
     </div>
   ) : null
 );
@@ -136,23 +140,114 @@ const VerificationSection: React.FC = () => (
     </div>
 );
 
+const timeSince = (dateString: string): string => {
+    const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
+    if (seconds < 5) return "Just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo ago`;
+    const years = Math.floor(days / 365);
+    return `${years}y ago`;
+};
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user }) => {
+const BusinessChatsList: React.FC<{
+    businessId: string;
+    chats: Chat[];
+    shifts: Shift[];
+    allUsers: User[];
+    onOpenChat: (chatId: string) => void;
+}> = ({ businessId, chats, shifts, allUsers, onOpenChat }) => {
+    const businessChats = chats
+        .filter(chat => chat.participants.businessId === businessId)
+        .sort((a, b) => {
+            const lastMessageA = a.messages[a.messages.length - 1];
+            const lastMessageB = b.messages[b.messages.length - 1];
+            if (!lastMessageA) return 1;
+            if (!lastMessageB) return -1;
+            return new Date(lastMessageB.timestamp).getTime() - new Date(lastMessageA.timestamp).getTime();
+        });
+
+    const getJobSeeker = (chat: Chat): User | undefined => {
+        return allUsers.find(u => u.id === chat.participants.userId);
+    };
+
+    return (
+        <div className="bg-white rounded-lg shadow-md mt-8">
+            <h3 className="text-xl font-bold text-primary p-6 border-b border-slate-200">Conversations</h3>
+            {businessChats.length > 0 ? (
+                <ul className="divide-y divide-slate-200">
+                    {businessChats.map(chat => {
+                        const jobSeeker = getJobSeeker(chat);
+                        const shift = shifts.find(s => s.id === chat.shiftId);
+                        const lastMessage = chat.messages[chat.messages.length - 1];
+
+                        if (!jobSeeker || !shift) return null;
+
+                        return (
+                            <li key={chat.id}>
+                                <button onClick={() => onOpenChat(chat.id)} className="w-full text-left p-4 hover:bg-slate-50 transition-colors flex items-center gap-4">
+                                    <img src={jobSeeker.avatar} alt={jobSeeker.name} className="w-12 h-12 rounded-full flex-shrink-0" />
+                                    <div className="flex-grow overflow-hidden">
+                                        <div className="flex justify-between items-baseline">
+                                            <p className="font-bold text-primary truncate">{jobSeeker.name}</p>
+                                            {lastMessage && <p className="text-xs text-slate-500 flex-shrink-0">{timeSince(lastMessage.timestamp)}</p>}
+                                        </div>
+                                        <p className="text-sm text-slate-600 truncate">Re: {shift.role} at {shift.businessName}</p>
+                                        {lastMessage ? (
+                                            <p className="text-sm text-slate-500 truncate mt-1">
+                                                {lastMessage.senderId === businessId ? "You: " : ""}
+                                                {lastMessage.text}
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-slate-500 italic mt-1">No messages yet.</p>
+                                        )}
+                                    </div>
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            ) : (
+                <div className="text-center p-12">
+                    <p className="text-slate-500">This business has no active conversations.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const ProfileView: React.FC<ProfileViewProps> = ({ user, chats, shifts, allUsers, onOpenChat }) => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
         <ProfileHeader user={user} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             <main className="lg:col-span-2 bg-white rounded-b-lg shadow-md divide-y divide-slate-200">
-                <AboutSection bio={user.bio} />
-                <ExperienceSection experience={user.experience} />
+                <AboutSection user={user} />
+                {user.userType === 'JobSeeker' && <ExperienceSection experience={user.experience} />}
                 <ReviewsSection reviews={user.reviews} />
             </main>
             <aside className="space-y-8">
-                <SidebarSection title="Skills" items={user.skills} />
+                {user.userType === 'JobSeeker' && <SidebarSection title="Skills" items={user.skills} />}
                 <VerificationSection />
             </aside>
         </div>
+        {user.userType === 'Business' && chats && shifts && allUsers && onOpenChat && (
+            <BusinessChatsList
+                businessId={user.id}
+                chats={chats}
+                shifts={shifts}
+                allUsers={allUsers}
+                onOpenChat={onOpenChat}
+            />
+        )}
       </div>
     </div>
   );

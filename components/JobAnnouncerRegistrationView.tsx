@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View } from '../App';
+import { View } from '../types';
 
 interface JobAnnouncerRegistrationViewProps {
     onNavigate: (view: View) => void;

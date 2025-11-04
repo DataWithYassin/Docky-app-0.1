@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from '../App';
+import { View } from '../types';
 
 interface RegistrationViewProps {
   onNavigate: (view: View) => void;

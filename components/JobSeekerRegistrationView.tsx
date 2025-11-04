@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Role, Experience } from '../types';
-import { View } from '../App';
+import { Role, Experience, View } from '../types';
 
 interface JobSeekerRegistrationViewProps {
     onNavigate: (view: View) => void;
+    onRegister: (formData: any) => void;
 }
 
 const locationData: { [key: string]: { code: string; cities: string[]; flag: string; } } = {
@@ -14,9 +14,10 @@ const locationData: { [key: string]: { code: string; cities: string[]; flag: str
 };
 
 
-const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ onNavigate }) => {
+const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ onNavigate, onRegister }) => {
     const [experiences, setExperiences] = useState<Experience[]>([]);
     const [languages, setLanguages] = useState<{ id: number; name: string; level: string }[]>([]);
+    const [fileErrors, setFileErrors] = useState<{ cv?: string; idFile?: string }>({});
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -88,39 +89,118 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
     const addExperience = () => {
         setExperiences([...experiences, { id: Date.now(), position: '', place: '', location: '', startDate: '', endDate: '' }]);
     }
+    const removeExperience = (id: number) => {
+      setExperiences(experiences.filter(exp => exp.id !== id));
+    };
+    const handleExperienceChange = (id: number, field: keyof Omit<Experience, 'id'>, value: string) => {
+      setExperiences(experiences.map(exp => exp.id === id ? { ...exp, [field]: value } : exp));
+    };
 
     const addLanguage = () => {
         setLanguages([...languages, { id: Date.now(), name: '', level: 'Basic' }]);
     }
+    const removeLanguage = (id: number) => {
+      setLanguages(languages.filter(lang => lang.id !== id));
+    };
+    const handleLanguageChange = (id: number, field: 'name' | 'level', value: string) => {
+      setLanguages(languages.map(lang => lang.id === id ? { ...lang, [field]: value } : lang));
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'cv' | 'idFile') => {
+        const file = e.target.files ? e.target.files[0] : null;
+        setFileErrors(prev => ({ ...prev, [fileType]: undefined })); // Clear previous error
+
+        if (file) {
+            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+            const allowedCVTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const cvExtensions = ['.pdf', '.doc', '.docx'];
+            const allowedIDTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+            const idExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+
+            const allowedTypes = fileType === 'cv' ? allowedCVTypes : allowedIDTypes;
+            const allowedExtensions = fileType === 'cv' ? cvExtensions : idExtensions;
+            const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            if (file.size > MAX_SIZE) {
+                setFileErrors(prev => ({ ...prev, [fileType]: 'File is too large (max 5MB).' }));
+                e.target.value = '';
+                setFormData(p => ({ ...p, [fileType]: null }));
+                return;
+            }
+
+            if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+                 setFileErrors(prev => ({ ...prev, [fileType]: `Invalid file type. Allowed: ${allowedExtensions.join(', ')}` }));
+                e.target.value = '';
+                setFormData(p => ({ ...p, [fileType]: null }));
+                return;
+            }
+            setFormData(p => ({...p, [fileType]: file}));
+        } else {
+            setFormData(p => ({...p, [fileType]: null}));
+        }
+    };
 
     const completion = useMemo(() => {
-        const fields = {
-            fullName: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            location: formData.location,
-            residenceType: formData.residenceType,
-            preferredJobs: formData.preferredJobs.size > 0,
-            preferredLocations: formData.preferredLocations.length > 0,
-            terms: formData.terms,
-            // Optional fields for bonus
-            experience: experiences.length > 0,
-            languages: languages.length > 0,
-            atividade: formData.atividade,
-            idFile: !!formData.idFile,
+        let score = 0;
+        const weights = {
+            // Core: 70 points
+            fullName: 10,
+            email: 10,
+            phone: 5,
+            location: 5,
+            residenceType: 5,
+            preferredJobs: 15,
+            preferredLocations: 15,
+            terms: 5,
+
+            // Optional: 30 points
+            experience: 10,
+            languages: 5,
+            atividade: 5,
+            cv: 5,
+            idFile: 5,
         };
+
+        // Core fields checks
+        if (formData.fullName.trim()) score += weights.fullName;
+        if (/\S+@\S+\.\S+/.test(formData.email)) score += weights.email;
+        if (formData.phone.trim()) score += weights.phone;
+        if (formData.location) score += weights.location;
+        if (formData.residenceType) score += weights.residenceType;
+        if (formData.preferredJobs.size > 0) score += weights.preferredJobs;
+        if (formData.preferredLocations.length > 0) score += weights.preferredLocations;
+        if (formData.terms) score += weights.terms;
         
-        let filledCount = 0;
-        Object.values(fields).forEach(value => {
-            if (typeof value === 'boolean' && value) {
-                filledCount++;
-            } else if (typeof value !== 'boolean' && value) {
-                filledCount++;
-            }
-        });
-        
-        return Math.round((filledCount / Object.keys(fields).length) * 100);
+        // Optional fields checks
+        const hasExperience = experiences.some(exp => exp.position.trim() && exp.place.trim());
+        if (hasExperience) score += weights.experience;
+
+        const hasLanguage = languages.some(lang => lang.name.trim());
+        if (hasLanguage) score += weights.languages;
+
+        if (formData.atividade) score += weights.atividade;
+        if (formData.cv) score += weights.cv;
+        if (formData.idFile) score += weights.idFile;
+
+        return Math.min(100, score);
     }, [formData, experiences, languages]);
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!formData.terms) {
+            alert('You must agree to the terms and conditions.');
+            return;
+        }
+        if (formData.preferredJobs.size === 0) {
+             alert('Please select at least one preferred job category.');
+            return;
+        }
+        if (formData.preferredLocations.length === 0) {
+             alert('Please select at least one preferred work location.');
+            return;
+        }
+        onRegister(formData);
+    };
     
   return (
     <div className="container mx-auto px-4 py-8">
@@ -140,7 +220,7 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
                 </div>
             </div>
 
-          <form className="mt-6 space-y-6">
+          <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
@@ -234,11 +314,22 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
                 <h3 className="text-lg font-medium text-primary">Work Experience (Optional)</h3>
                  {experiences.map((exp, index) => (
                     <div key={exp.id} className="mt-4 p-4 border border-slate-200 rounded-md space-y-4">
-                        <input type="text" placeholder="Position (e.g., Barista)" className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
-                         <input type="text" placeholder="Company / Place" className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                        <div className="flex justify-between items-center">
+                            <h4 className="font-semibold text-slate-800">Experience #{index + 1}</h4>
+                            <button type="button" onClick={() => removeExperience(exp.id)} className="text-sm font-semibold text-red-600 hover:text-red-800 transition-colors">Remove</button>
+                        </div>
+                        <input type="text" placeholder="Position (e.g., Barista)" value={exp.position} onChange={e => handleExperienceChange(exp.id, 'position', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                        <input type="text" placeholder="Company / Place" value={exp.place} onChange={e => handleExperienceChange(exp.id, 'place', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                        <input type="text" placeholder="Location (e.g., Lisbon)" value={exp.location} onChange={e => handleExperienceChange(exp.id, 'location', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
                          <div className="grid grid-cols-2 gap-4">
-                            <input type="month" placeholder="Start Date" className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
-                            <input type="month" placeholder="End Date" className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                            <div>
+                               <label className="text-xs text-slate-500">Start Date</label>
+                               <input type="month" value={exp.startDate} onChange={e => handleExperienceChange(exp.id, 'startDate', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                            </div>
+                            <div>
+                               <label className="text-xs text-slate-500">End Date</label>
+                               <input type="month" value={exp.endDate} onChange={e => handleExperienceChange(exp.id, 'endDate', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -247,14 +338,20 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
              <div>
                 <h3 className="text-lg font-medium text-primary">Languages Spoken (Optional)</h3>
                  {languages.map((lang, index) => (
-                    <div key={lang.id} className="mt-4 p-4 border border-slate-200 rounded-md grid grid-cols-2 gap-4">
-                        <input type="text" placeholder="Language (e.g., English)" className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
-                        <select className="block w-full px-3 py-2 border border-slate-300 bg-white rounded-md">
-                            <option>Basic</option>
-                            <option>Conversational</option>
-                            <option>Fluent</option>
-                            <option>Native</option>
-                        </select>
+                    <div key={lang.id} className="mt-4 p-4 border border-slate-200 rounded-md space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-semibold text-slate-800">Language #{index + 1}</h4>
+                          <button type="button" onClick={() => removeLanguage(lang.id)} className="text-sm font-semibold text-red-600 hover:text-red-800 transition-colors">Remove</button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <input type="text" placeholder="Language (e.g., English)" value={lang.name} onChange={e => handleLanguageChange(lang.id, 'name', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 rounded-md" />
+                            <select value={lang.level} onChange={e => handleLanguageChange(lang.id, 'level', e.target.value)} className="block w-full px-3 py-2 border border-slate-300 bg-white rounded-md">
+                                <option>Basic</option>
+                                <option>Conversational</option>
+                                <option>Fluent</option>
+                                <option>Native</option>
+                            </select>
+                        </div>
                     </div>
                 ))}
                 <button type="button" onClick={addLanguage} className="mt-2 text-sm font-semibold text-accent hover:text-accent-hover">+ Add Language</button>
@@ -277,7 +374,8 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700">Upload CV (Optional)</label>
-                    <input type="file" name="cv" className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-accent hover:file:bg-cyan-100" onChange={(e) => setFormData(p => ({...p, cv: e.target.files ? e.target.files[0] : null}))}/>
+                    <input type="file" name="cv" className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-accent hover:file:bg-cyan-100" accept=".pdf,.doc,.docx" onChange={(e) => handleFileChange(e, 'cv')}/>
+                    {fileErrors.cv && <p className="mt-1 text-sm text-red-600">{fileErrors.cv}</p>}
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700">Residence / ID / Passport (Optional)</label>
@@ -287,8 +385,9 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
                             <option>Passport</option>
                             <option>Residence Permit</option>
                         </select>
-                        <input type="file" name="idFile" className="block w-full sm:w-2/3 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-accent hover:file:bg-cyan-100" onChange={(e) => setFormData(p => ({...p, idFile: e.target.files ? e.target.files[0] : null}))}/>
+                        <input type="file" name="idFile" className="block w-full sm:w-2/3 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-accent hover:file:bg-cyan-100" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFileChange(e, 'idFile')}/>
                     </div>
+                     {fileErrors.idFile && <p className="mt-1 text-sm text-red-600">{fileErrors.idFile}</p>}
                 </div>
             </div>
             

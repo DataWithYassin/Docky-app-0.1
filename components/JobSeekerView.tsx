@@ -1,13 +1,15 @@
 import React from 'react';
-import { User, Shift, ShiftStatus } from '../types';
-import { View } from '../App';
-import { DocumentTextIcon, CalendarIcon, TrendingUpIcon } from './Icons';
-import ShiftCard from './ShiftCard';
+import { User, Shift, ShiftStatus, View, Application, ApplicationStatus } from '../types';
+import { DocumentTextIcon, CalendarIcon, TrendingUpIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from './Icons';
 
 interface JobSeekerViewProps {
     user: User;
     shifts: Shift[];
     onNavigate: (view: View) => void;
+    onApply: (shiftId: string) => void;
+    isLoggedIn: boolean;
+    onConfirmShift: (shiftId: string) => void;
+    onOpenChat: (shiftId: string) => void;
 }
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; }> = ({ title, value, icon }) => (
@@ -22,11 +24,57 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: React.Re
     </div>
 );
 
+const AppliedShiftCard: React.FC<{ shift: Shift; application: Application; onConfirm: () => void; onChat: () => void; }> = ({ shift, application, onConfirm, onChat }) => {
+    const statusInfo = {
+        [ApplicationStatus.Pending]: { text: 'Pending', classes: 'bg-yellow-100 text-yellow-800', icon: <ClockIcon className="w-4 h-4" /> },
+        [ApplicationStatus.Accepted]: { text: 'Accepted', classes: 'bg-green-100 text-green-800', icon: <CheckCircleIcon className="w-4 h-4" /> },
+        [ApplicationStatus.Rejected]: { text: 'Not Selected', classes: 'bg-red-100 text-red-800', icon: <XCircleIcon className="w-4 h-4" /> },
+        [ApplicationStatus.Confirmed]: { text: 'Confirmed', classes: 'bg-blue-100 text-blue-800', icon: <CheckCircleIcon className="w-4 h-4" /> },
+    };
 
-const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, onNavigate }) => {
-    // Filter shifts based on user's applications
-    const appliedShifts = shifts.filter(s => user.appliedShifts?.includes(s.id));
-    const upcomingShifts = appliedShifts.filter(s => s.status === ShiftStatus.Filled || s.status === ShiftStatus.Open); // Assume open shifts are still possibilities
+    const currentStatus = statusInfo[application.status];
+
+    return (
+        <div className="bg-white p-5 rounded-lg shadow-md">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <img src={shift.businessLogo} alt={shift.businessName} className="w-12 h-12 rounded-full" />
+                    <div>
+                        <p className="font-bold text-primary">{shift.role} at {shift.businessName}</p>
+                        <p className="text-sm text-slate-500">{shift.date} &bull; {shift.startTime} - {shift.endTime}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${currentStatus.classes}`}>
+                        {currentStatus.icon}
+                        {currentStatus.text}
+                    </span>
+                    {(application.status === ApplicationStatus.Accepted || application.status === ApplicationStatus.Confirmed) && (
+                         <button onClick={onChat} className="bg-primary text-white font-bold text-xs py-1.5 px-3 rounded-full hover:bg-slate-800">
+                           Chat
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, onNavigate, onApply, isLoggedIn, onConfirmShift, onOpenChat }) => {
+    const userApplications = user.applications || [];
+    // FIX: Use a type guard in the filter to ensure TypeScript correctly infers
+    // that `shift` is not undefined in the subsequent `sort` and `map` operations.
+    // This resolves the arithmetic operation error and allows removing non-null assertions.
+    const appliedShifts = userApplications
+        .map(app => ({
+            application: app,
+            shift: shifts.find(s => s.id === app.shiftId),
+        }))
+        .filter((item): item is { application: Application; shift: Shift } => !!item.shift) // Filter out any applications for shifts that don't exist
+        .sort((a, b) => new Date(b.shift.postedAt).getTime() - new Date(a.shift.postedAt).getTime());
+
+    const actionRequiredShifts = appliedShifts.filter(item => item.application.status === ApplicationStatus.Accepted);
+    const otherAppliedShifts = appliedShifts.filter(item => item.application.status !== ApplicationStatus.Accepted);
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -38,12 +86,12 @@ const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, onNavigate 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <StatCard 
                     title="Shifts Applied" 
-                    value={user.appliedShifts?.length || 0} 
+                    value={userApplications.length || 0} 
                     icon={<DocumentTextIcon className="w-6 h-6 text-slate-600"/>} 
                 />
                 <StatCard 
                     title="Upcoming Shifts" 
-                    value={upcomingShifts.length} 
+                    value={userApplications.filter(a => a.status === ApplicationStatus.Confirmed).length} 
                     icon={<CalendarIcon className="w-6 h-6 text-slate-600"/>} 
                 />
                 <StatCard 
@@ -52,10 +100,31 @@ const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, onNavigate 
                     icon={<TrendingUpIcon className="w-6 h-6 text-slate-600"/>} 
                 />
             </div>
+
+            {actionRequiredShifts.length > 0 && (
+                <div className="mb-10">
+                    <h3 className="text-2xl font-bold text-amber-600 mb-4">Action Required</h3>
+                    <div className="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg space-y-4">
+                        {actionRequiredShifts.map(({ shift, application }) => (
+                            <div key={shift.id} className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                <p className="text-amber-900">
+                                    <span className="font-bold">Congratulations!</span> You've been accepted for the <span className="font-semibold">{shift.role}</span> shift at <span className="font-semibold">{shift.businessName}</span>.
+                                </p>
+                                <div className="flex items-center gap-3 flex-shrink-0">
+                                    <button onClick={() => onOpenChat(shift.id)} className="font-bold text-sm text-primary hover:underline">Chat with Business</button>
+                                    <button onClick={() => onConfirmShift(shift.id)} className="bg-amber-500 text-white font-bold py-2 px-4 rounded-full hover:bg-amber-600 transition-colors text-sm">
+                                        Confirm Shift
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             
             <div>
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-2xl font-bold text-primary">Your Upcoming & Applied Shifts</h3>
+                    <h3 className="text-2xl font-bold text-primary">Your Applied Shifts</h3>
                      <button
                         onClick={() => onNavigate('jobs')}
                         className="bg-accent text-white font-bold py-2 px-5 rounded-full hover:bg-accent-hover transition-transform duration-200 hover:scale-105"
@@ -64,15 +133,21 @@ const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, onNavigate 
                     </button>
                 </div>
 
-                {upcomingShifts.length > 0 ? (
-                    <div className="space-y-6">
-                    {upcomingShifts.map(shift => (
-                        <ShiftCard key={shift.id} shift={shift} />
-                    ))}
+                {otherAppliedShifts.length > 0 ? (
+                    <div className="space-y-4">
+                        {otherAppliedShifts.map(({ shift, application }) => (
+                            <AppliedShiftCard
+                                key={shift.id}
+                                shift={shift}
+                                application={application}
+                                onConfirm={() => onConfirmShift(shift.id)}
+                                onChat={() => onOpenChat(shift.id)}
+                            />
+                        ))}
                     </div>
                 ) : (
                     <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
-                        <h3 className="text-xl font-semibold text-primary">No Upcoming Shifts</h3>
+                        <h3 className="text-xl font-semibold text-primary">No Applied Shifts</h3>
                         <p className="text-slate-500 mt-2 mb-6">You haven't applied for any shifts yet. Start exploring opportunities now!</p>
                         <button
                             onClick={() => onNavigate('jobs')}
