@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Shift, User, WebsiteContent } from '../types';
 import ShiftCard from './ShiftCard';
 import { CheckCircleIcon, AppStoreBadgeIcon, GooglePlayBadgeIcon } from './Icons';
@@ -21,27 +21,62 @@ const ValuePropCard: React.FC<{
   buttonText: string;
   onButtonClick: () => void;
   buttonClass: string;
-}> = ({ title, subtitle, benefits, emoji, buttonText, onButtonClick, buttonClass }) => (
-  <div className="bg-white p-8 rounded-2xl shadow-lg flex flex-col transition-transform duration-300 hover:scale-[1.02]">
-    <div className="text-5xl mb-4">{emoji}</div>
-    <h3 className="text-2xl font-bold text-primary">{title}</h3>
-    <p className="text-slate-600 mt-2">{subtitle}</p>
-    <ul className="mt-4 space-y-2 text-slate-700 flex-grow">
-      {benefits.map((benefit, index) => (
-        <li key={index} className="flex items-start">
-          <CheckCircleIcon className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
-          <span>{benefit}</span>
-        </li>
-      ))}
-    </ul>
-    <button
-      onClick={onButtonClick}
-      className={`mt-8 w-full font-bold py-3 px-8 rounded-full transition-transform duration-200 hover:scale-105 ${buttonClass}`}
+  index: number;
+}> = ({ title, subtitle, benefits, emoji, buttonText, onButtonClick, buttonClass, index }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = cardRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
+  
+  return (
+    <div
+      ref={cardRef}
+      className={`bg-white p-8 rounded-2xl shadow-lg flex flex-col transition-all duration-700 ease-out hover:scale-[1.02] ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+      }`}
+      style={{ transitionDelay: `${index * 150}ms` }}
     >
-      {buttonText}
-    </button>
-  </div>
-);
+      <div className="text-5xl mb-4">{emoji}</div>
+      <h3 className="text-2xl font-bold text-primary">{title}</h3>
+      <p className="text-slate-600 mt-2">{subtitle}</p>
+      <ul className="mt-4 space-y-2 text-slate-700 flex-grow">
+        {benefits.map((benefit, i) => (
+          <li key={i} className="flex items-start">
+            <CheckCircleIcon className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
+            <span>{benefit}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={onButtonClick}
+        className={`mt-8 w-full font-bold py-3 px-8 rounded-full transition-transform duration-200 hover:scale-105 ${buttonClass}`}
+      >
+        {buttonText}
+      </button>
+    </div>
+  );
+};
 
 const LogoMarquee: React.FC<{ logos: { id: string; name: string; avatar?: string; src?: string }[]; reverse?: boolean; }> = ({ logos, reverse = false }) => {
     const animationClass = reverse ? 'animate-marquee-reverse' : 'animate-marquee';
@@ -112,6 +147,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, use
       <section className="container mx-auto px-4 -mt-36">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <ValuePropCard 
+                  index={0}
                   emoji="👷"
                   title={content.valueProps.jobSeeker.title}
                   subtitle={content.valueProps.jobSeeker.subtitle}
@@ -121,6 +157,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, use
                   buttonClass="bg-primary text-white"
               />
               <ValuePropCard 
+                  index={1}
                   emoji="🏢"
                   title={content.valueProps.business.title}
                   subtitle={content.valueProps.business.subtitle}

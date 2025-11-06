@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Shift, Role, User } from '../types';
+import { Shift, Role, User, Job } from '../types';
 import ShiftCard from './ShiftCard';
+import JobCard from './JobCard';
 import { BriefcaseIcon, LocationIcon, ClockIcon, ChevronDownIcon, CalendarIcon, XCircleIcon } from './Icons';
 
 interface WorkerViewProps {
   shifts: Shift[];
+  jobs: Job[];
   onApply: (shiftId: string) => void;
+  onApplyForJob: (jobId: string) => void;
   isLoggedIn: boolean;
   user: User | null;
 }
@@ -79,13 +82,14 @@ const FilterDropdown: React.FC<{
 };
 
 
-const WorkerView: React.FC<WorkerViewProps> = ({ shifts, onApply, isLoggedIn, user }) => {
+const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyForJob, isLoggedIn, user }) => {
   const [filterRole, setFilterRole] = useState<Role | 'All'>('All');
   const [filterCity, setFilterCity] = useState<string>('All');
   const [filterTime, setFilterTime] = useState<ShiftTime>('All');
   const [filterDate, setFilterDate] = useState<string>('All'); // 'All' or 'YYYY-MM-DD'
   
   const availableShifts = useMemo(() => shifts.filter(shift => shift.status === 'Open'), [shifts]);
+  const availableJobs = useMemo(() => jobs.filter(job => !job.talentId), [jobs]);
 
   const getCityFromLocation = (location: string): string => {
     return location.split(', ').shift() || location;
@@ -112,32 +116,43 @@ const WorkerView: React.FC<WorkerViewProps> = ({ shifts, onApply, isLoggedIn, us
     return [...filteredShifts].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
   }, [filteredShifts]);
   
+  const filteredJobs = useMemo(() => {
+    return availableJobs
+      .filter(job => {
+        const roleMatch = filterRole === 'All' || job.role === filterRole;
+        const cityMatch = filterCity === 'All' || getCityFromLocation(job.location) === filterCity;
+        return roleMatch && cityMatch;
+      })
+      .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+  }, [availableJobs, filterRole, filterCity]);
+
   const roles = [ 'All', ...Object.values(Role)];
   
   const cities = useMemo(() => {
-    return ['All', ...Array.from(new Set(availableShifts.map(shift => getCityFromLocation(shift.location))))];
-  }, [availableShifts]);
+    const allLocations = [...availableShifts.map(s => s.location), ...availableJobs.map(j => j.location)];
+    return ['All', ...Array.from(new Set(allLocations.map(location => getCityFromLocation(location))))];
+  }, [availableShifts, availableJobs]);
 
   const shiftTimes: ShiftTime[] = ['All', 'Morning', 'Afternoon', 'Evening'];
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-primary tracking-tight">Find Your Next Shift</h2>
-        <p className="text-slate-600 mt-2 max-w-2xl mx-auto">Browse available shifts using the filters below. Your next opportunity is just a click away.</p>
+        <h2 className="text-3xl font-bold text-primary tracking-tight">Find Your Next Opportunity</h2>
+        <p className="text-slate-600 mt-2 max-w-2xl mx-auto">Browse part-time jobs and single shifts. Your next opportunity is just a click away.</p>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-md mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           <FilterDropdown title="Job Type" items={roles} selected={filterRole} onSelect={(role) => setFilterRole(role as Role | 'All')} icon={<BriefcaseIcon className="w-5 h-5" />} />
           <FilterDropdown title="City" items={cities} selected={filterCity} onSelect={setFilterCity} icon={<LocationIcon className="w-5 h-5" />} />
-          <FilterDropdown title="Shift Time" items={shiftTimes} selected={filterTime} onSelect={(time) => setFilterTime(time as ShiftTime)} icon={<ClockIcon className="w-5 h-5" />} />
+          <FilterDropdown title="Shift Time (for shifts)" items={shiftTimes} selected={filterTime} onSelect={(time) => setFilterTime(time as ShiftTime)} icon={<ClockIcon className="w-5 h-5" />} />
           <div className="relative w-full">
             <div className="w-full flex items-center justify-between px-4 py-3 bg-slate-100 rounded-lg text-left h-full">
                 <div className="flex items-center gap-3 w-full">
                     <div className="text-slate-500"><CalendarIcon className="w-5 h-5" /></div>
                     <div className="w-full">
-                        <label htmlFor="date-filter" className="text-xs text-slate-500 font-semibold">Date</label>
+                        <label htmlFor="date-filter" className="text-xs text-slate-500 font-semibold">Date (for shifts)</label>
                         <div className="flex items-center justify-between">
                              <input
                                 id="date-filter"
@@ -161,25 +176,46 @@ const WorkerView: React.FC<WorkerViewProps> = ({ shifts, onApply, isLoggedIn, us
       </div>
 
       <>
-        {sortedShifts.length > 0 ? (
-            <div className="space-y-6">
-            {sortedShifts.map(shift => (
-                <ShiftCard
-                key={shift.id}
-                shift={shift}
-                onApply={onApply}
-                isLoggedIn={isLoggedIn}
-                isApplied={user?.applications?.some(app => app.shiftId === shift.id) ?? false}
-                currentUser={user}
-                />
-            ))}
-            </div>
-        ) : (
-            <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold text-primary">No Shifts Available</h3>
-                <p className="text-slate-500 mt-2">There are no open shifts matching your criteria. Please check back later!</p>
+        {filteredJobs.length > 0 && (
+            <div className="mb-12">
+                <h3 className="text-2xl font-bold text-primary mb-6">Part-time Job Openings</h3>
+                <div className="space-y-6">
+                    {filteredJobs.map(job => (
+                        <JobCard
+                            key={job.id}
+                            job={job}
+                            onApply={onApplyForJob}
+                            isLoggedIn={isLoggedIn}
+                            isApplied={user?.applications?.some(app => app.jobId === job.id) ?? false}
+                            currentUser={user}
+                        />
+                    ))}
+                </div>
             </div>
         )}
+
+        <div>
+             <h3 className="text-2xl font-bold text-primary mb-6">Available Single Shifts</h3>
+            {sortedShifts.length > 0 ? (
+                <div className="space-y-6">
+                {sortedShifts.map(shift => (
+                    <ShiftCard
+                    key={shift.id}
+                    shift={shift}
+                    onApply={onApply}
+                    isLoggedIn={isLoggedIn}
+                    isApplied={user?.applications?.some(app => app.shiftId === shift.id) ?? false}
+                    currentUser={user}
+                    />
+                ))}
+                </div>
+            ) : (
+                <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
+                    <h3 className="text-xl font-semibold text-primary">No Shifts Available</h3>
+                    <p className="text-slate-500 mt-2">There are no open shifts matching your criteria. Please check back later!</p>
+                </div>
+            )}
+        </div>
       </>
     </div>
   );

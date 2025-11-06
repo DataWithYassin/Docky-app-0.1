@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Shift, Role, User, ShiftStatus } from '../types';
 import { StarIcon, LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon } from './Icons';
@@ -13,7 +14,7 @@ interface ShiftCardProps {
 const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
     [Role.Chef]: { emoji: '👨‍🍳', classes: 'bg-orange-100 text-orange-800' },
     [Role.Barista]: { emoji: '☕️', classes: 'bg-amber-100 text-amber-800' },
-    [Role.Waiter]: { emoji: '🤵', classes: 'bg-indigo-100 text-indigo-800' },
+    [Role.Waiter]: { emoji: '🤵', classes: 'bg-blue-100 text-blue-800' },
     [Role.Host]: { emoji: '👋', classes: 'bg-rose-100 text-rose-800' },
     [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
 };
@@ -65,7 +66,7 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
 
     const days = Math.floor(hours / 24);
     if (days >= 3) {
-      return `posted 3d ago`;
+      return `posted 3d+ ago`;
     }
     return `posted ${days}d ago`;
   };
@@ -75,6 +76,9 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
   const badge = roleBadges[shift.role] || { emoji: '🍽️', classes: 'bg-cyan-100 text-cyan-800' };
 
   const isJobSeeker = isLoggedIn && currentUser?.userType === 'JobSeeker';
+
+  const formattedDuration = duration % 1 === 0 ? duration.toFixed(0) : duration.toFixed(1);
+  const article = formattedDuration === '8' ? 'an' : 'a';
 
   return (
     <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden w-full">
@@ -95,6 +99,9 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
                   {badge.emoji}
                   <span className="ml-1.5">{shift.role}</span>
                 </span>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                  Single Shift
+                </span>
                 {shift.rating && (
                     <div className="flex items-center gap-1 text-amber-500">
                         <StarIcon className="w-4 h-4" />
@@ -113,12 +120,17 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
         </div>
 
         <p className="text-base text-slate-700 leading-relaxed border-t border-slate-200 pt-4">
-          A shift for ({duration.toFixed(1)} hours), on <span className="font-bold text-indigo-600">📅 {formatDate(shift.date)}</span>, from <span className="font-bold text-amber-600">🕓 {shift.startTime}–{shift.endTime}</span>, paid <span className="font-bold text-green-600">💶 €{shift.hourlyRate.toFixed(2)}/hour (€{totalPay.toFixed(2)} total)</span>. 
-          {shift.languages && shift.languages.length > 0 && (
-            <> Speakers of <span className="font-bold text-purple-600">🗣️ {shift.languages.join(' & ')}</span> are welcome.</>
-          )}
+          {shift.role} needed for {article} {formattedDuration}-hour shift on <span className="font-bold text-indigo-600">📅 {formatDate(shift.date)}</span>, from <span className="font-bold text-amber-600">🕓 {shift.startTime} to {shift.endTime}</span>.
+          {' '}The position pays <span className="font-bold text-green-600">💶 €{shift.hourlyRate.toFixed(2)} per hour (€{totalPay.toFixed(2)} total)</span>.
           {shift.requirements && shift.requirements.length > 0 && (
-            <> Must have <span className="font-bold text-rose-600">✅ {shift.requirements.join(', ')}</span>.</>
+            <>
+              {' '}Applicants must hold a <span className="font-bold text-rose-600">✅ {shift.requirements.join(', ')}</span>.
+            </>
+          )}
+          {shift.languages && shift.languages.length > 0 && (
+            <>
+              {' '}Speakers of <span className="font-bold text-purple-600">🗣️ {shift.languages.join(' & ')}</span> are welcome.
+            </>
           )}
         </p>
 

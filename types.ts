@@ -37,7 +37,8 @@ export type View =
   | 'jobSeekerDashboard'
   | 'adminDashboard'
   | 'chat'
-  | 'chatsList';
+  | 'chatsList'
+  | 'availability';
 
 
 export interface Review {
@@ -50,8 +51,28 @@ export interface Review {
 }
 
 export interface Application {
-  shiftId: string;
+  shiftId?: string;
+  jobId?: string;
   status: ApplicationStatus;
+}
+
+export const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+export type WeekDay = typeof weekDays[number];
+
+export interface Job {
+  id: string;
+  businessName: string;
+  businessLogo: string;
+  talentId?: string;
+  applicants?: User[];
+  role: Role;
+  startDate: string;
+  workDays: WeekDay[];
+  scheduleDetails: string;
+  hourlyRate: number;
+  location: string;
+  description: string;
+  postedAt: string;
 }
 
 export interface User {
@@ -70,6 +91,7 @@ export interface User {
   experience?: Experience[];
   skills?: string[];
   reviews?: Review[];
+  jobs?: Job[];
 }
 
 export interface Experience {
@@ -114,6 +136,25 @@ export interface Chat {
   shiftId: string;
   participants: { userId: string, businessId: string };
   messages: Message[];
+}
+
+export const availabilityTypes = ['Single Shifts', 'Part-time Job'] as const;
+export type AvailabilityType = typeof availabilityTypes[number];
+
+export const timeSlots = ['Morning', 'Afternoon', 'Evening', 'Night'] as const;
+export type TimeSlot = typeof timeSlots[number];
+
+export interface AvailabilityPost {
+  id: string;
+  userId: string;
+  postedAt: string;
+  lookingFor: AvailabilityType[];
+  availableDays: WeekDay[];
+  availableTimes: TimeSlot[];
+  roles: Role[];
+  experienceSummary: string;
+  languages: string[];
+  notes: string;
 }
 
 // Types for editable website content

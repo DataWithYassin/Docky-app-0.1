@@ -135,6 +135,7 @@ const Header: React.FC<{
           <nav className="hidden md:flex items-center gap-2">
             <NavLink view="home">{t('home')}</NavLink>
             <NavLink view="jobs">{t('jobs')}</NavLink>
+            <NavLink view="availability">Find Talent</NavLink>
             <NavLink view="insights">{t('insights')}</NavLink>
             {isLoggedIn && <NavLink view="chatsList">Chats</NavLink>}
           </nav>
@@ -271,6 +272,7 @@ const Header: React.FC<{
             <div className="container mx-auto px-4 pt-2 pb-4 space-y-1">
                 <MobileNavLink view="home">{t('home')}</MobileNavLink>
                 <MobileNavLink view="jobs">{t('jobs')}</MobileNavLink>
+                <MobileNavLink view="availability">Find Talent</MobileNavLink>
                 <MobileNavLink view="insights">{t('insights')}</MobileNavLink>
                 {isLoggedIn && <MobileNavLink view="chatsList">Chats</MobileNavLink>}
 
