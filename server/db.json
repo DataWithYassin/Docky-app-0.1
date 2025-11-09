@@ -1,0 +1,288 @@
+
+{
+  "users": [
+    {
+      "id": "user-1",
+      "name": "Alice Johnson",
+      "email": "alice.j@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=alice",
+      "role": "Barista",
+      "rating": 4.8,
+      "reviewCount": 24,
+      "userType": "JobSeeker",
+      "totalEarnings": 1250.75,
+      "applications": [
+        { "shiftId": "shift-1", "status": "Accepted" },
+        { "shiftId": "shift-3", "status": "Pending" },
+        { "shiftId": "shift-5", "status": "Confirmed" }
+      ],
+      "jobs": [{
+        "id": "job-1",
+        "businessName": "Gourmet Bites",
+        "businessLogo": "https://i.pravatar.cc/150?u=gourmet",
+        "talentId": "user-1",
+        "role": "Barista",
+        "startDate": "2024-09-01",
+        "workDays": ["Monday", "Wednesday", "Friday"],
+        "scheduleDetails": "Morning shifts, 8am to 2pm.",
+        "hourlyRate": 16.00,
+        "location": "Porto, Portugal",
+        "description": "Permanent part-time barista position. We are looking for a reliable team member for our morning crew.",
+        "postedAt": "2024-07-30T10:00:00Z"
+      }],
+      "location": "Lisbon, Portugal",
+      "bio": "Experienced barista with a passion for latte art and customer service. Quick learner and team player, always ready for a new challenge. Fluent in English and Portuguese.",
+      "experience": [
+        { "id": 1, "position": "Head Barista", "place": "The Coffee Bean", "location": "Lisbon", "startDate": "2022-01", "endDate": "2023-12" },
+        { "id": 2, "position": "Barista", "place": "Morning Brew", "location": "Porto", "startDate": "2020-06", "endDate": "2021-12" }
+      ],
+      "skills": ["Latte Art", "Espresso Machine Operation", "Customer Service", "Cash Handling", "Food Safety"],
+      "reviews": [
+        { "id": "rev-1", "reviewerName": "The Local Cafe", "reviewerAvatar": "https://i.pravatar.cc/150?u=cafe", "rating": 5, "comment": "Alice was fantastic! Punctual, professional, and great with customers.", "date": "2024-07-15" },
+        { "id": "rev-2", "reviewerName": "Gourmet Bites", "reviewerAvatar": "https://i.pravatar.cc/150?u=gourmet", "rating": 4, "comment": "A reliable and skilled barista. Would hire again.", "date": "2024-06-20" }
+      ]
+    },
+    {
+      "id": "user-4",
+      "name": "Carlos Diaz",
+      "email": "carlos.d@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=carlos",
+      "role": "Chef",
+      "rating": 4.9,
+      "reviewCount": 32,
+      "userType": "JobSeeker",
+      "applications": [
+        { "shiftId": "shift-3", "status": "Pending" }
+      ],
+      "location": "Porto, Portugal"
+    },
+    {
+      "id": "user-3",
+      "name": "Admin",
+      "email": "admin@docky.com",
+      "avatar": "https://i.pravatar.cc/150?u=admin",
+      "role": "Host",
+      "rating": 5,
+      "reviewCount": 0,
+      "userType": "JobSeeker"
+    },
+    {
+      "id": "user-nat",
+      "name": "Natalia Kowalska",
+      "email": "natalia.k@example.com",
+      "avatar": "https://i.pravatar.cc/150?u=natalia",
+      "role": "Waiter",
+      "rating": 4.7,
+      "reviewCount": 15,
+      "userType": "JobSeeker",
+      "location": "Lisbon, Portugal",
+      "bio": "Versatile hospitality professional from Poland, eager to contribute to a great team in Lisbon.",
+      "skills": ["English", "Polish", "Basic Portuguese", "Waitress", "Barback"]
+    }
+  ],
+  "businessUsers": [
+    { "id": "biz-1", "name": "The Local Cafe", "email": "contact@localcafe.com", "avatar": "https://i.pravatar.cc/150?u=cafe", "role": "Host", "rating": 4.5, "reviewCount": 120, "userType": "Business", "location": "Lisbon, Portugal" },
+    { "id": "biz-2", "name": "Gourmet Bites", "email": "info@gourmetbites.com", "avatar": "https://i.pravatar.cc/150?u=gourmet", "role": "Host", "rating": 4.7, "reviewCount": 88, "userType": "Business", "location": "Porto, Portugal" },
+    { "id": "biz-3", "name": "Sunset Grill", "email": "manager@sunsetgrill.com", "avatar": "https://i.pravatar.cc/150?u=sunset", "role": "Host", "rating": 4.2, "reviewCount": 45, "userType": "Business", "location": "Faro, Portugal" },
+    { "id": "biz-4", "name": "Ocean View Restaurant", "email": "bookings@oceanview.com", "avatar": "https://i.pravatar.cc/150?u=ocean", "role": "Host", "rating": 4.9, "reviewCount": 150, "userType": "Business", "location": "Cascais, Portugal" },
+    { "id": "biz-5", "name": "The Artisan Bakery", "email": "hello@artisanbakery.com", "avatar": "https://i.pravatar.cc/150?u=bakery", "role": "Host", "rating": 4.6, "reviewCount": 72, "userType": "Business", "location": "Sintra, Portugal" }
+  ],
+  "shifts": [
+    {
+      "id": "shift-1",
+      "businessName": "The Local Cafe",
+      "businessLogo": "https://i.pravatar.cc/150?u=cafe",
+      "role": "Barista",
+      "date": "2024-08-20",
+      "startTime": "08:00",
+      "endTime": "16:00",
+      "hourlyRate": 15.00,
+      "location": "Lisbon, Portugal",
+      "status": "Filled",
+      "applicants": ["user-1"],
+      "acceptedApplicantId": "user-1",
+      "description": "Seeking an experienced barista for a full-day shift. Must be proficient with latte art and various brewing methods.",
+      "postedAt": "2024-07-25T09:00:00Z",
+      "rating": 4.5,
+      "requirements": ["Food Safety Certificate"],
+      "languages": ["Portuguese", "English"],
+      "allowPreApplyMessaging": true
+    },
+    {
+      "id": "shift-2",
+      "businessName": "Gourmet Bites",
+      "businessLogo": "https://i.pravatar.cc/150?u=gourmet",
+      "role": "Waiter",
+      "date": "2024-08-21",
+      "startTime": "18:00",
+      "endTime": "23:00",
+      "hourlyRate": 12.50,
+      "location": "Porto, Portugal",
+      "status": "Open",
+      "applicants": ["user-1", "user-4"],
+      "description": "Evening waiter needed for a busy dinner service. Experience in fine dining is a plus.",
+      "postedAt": "2024-07-28T11:30:00Z",
+      "rating": 4.7,
+      "allowPreApplyMessaging": false
+    },
+    {
+      "id": "shift-3",
+      "businessName": "Sunset Grill",
+      "businessLogo": "https://i.pravatar.cc/150?u=sunset",
+      "role": "Chef",
+      "date": "2024-08-22",
+      "startTime": "10:00",
+      "endTime": "18:00",
+      "hourlyRate": 18.00,
+      "location": "Faro, Portugal",
+      "status": "Open",
+      "applicants": ["user-4"],
+      "description": "Chef needed for a daytime shift focusing on prep and lunch service. Must have experience with grill and seafood.",
+      "postedAt": "2024-07-29T14:00:00Z",
+      "rating": 4.2,
+      "requirements": ["Valid Food Safety Certificate"],
+      "allowPreApplyMessaging": true
+    },
+    {
+      "id": "shift-4",
+      "businessName": "The Local Cafe",
+      "businessLogo": "https://i.pravatar.cc/150?u=cafe",
+      "role": "KitchenStaff",
+      "date": "2024-08-22",
+      "startTime": "09:00",
+      "endTime": "13:00",
+      "hourlyRate": 11.00,
+      "location": "Lisbon, Portugal",
+      "status": "Completed",
+      "applicants": [],
+      "description": "Kitchen help needed for morning prep, including chopping vegetables and washing dishes.",
+      "postedAt": "2024-07-21T10:00:00Z",
+      "rating": 4.5
+    },
+    {
+      "id": "shift-5",
+      "businessName": "Ocean View Restaurant",
+      "businessLogo": "https://i.pravatar.cc/150?u=ocean",
+      "role": "Host",
+      "date": "2024-08-25",
+      "startTime": "19:00",
+      "endTime": "23:00",
+      "hourlyRate": 14.00,
+      "location": "Cascais, Portugal",
+      "status": "Open",
+      "applicants": ["user-1"],
+      "description": "Looking for a charismatic host to manage reservations and greet guests on a busy weekend night.",
+      "postedAt": "2024-07-29T18:00:00Z",
+      "rating": 4.9,
+      "languages": ["English"],
+      "allowPreApplyMessaging": true
+    }
+  ],
+  "jobs": [
+    {
+      "id": "job-1",
+      "businessName": "Gourmet Bites",
+      "businessLogo": "https://i.pravatar.cc/150?u=gourmet",
+      "talentId": "user-1",
+      "role": "Barista",
+      "startDate": "2024-09-01",
+      "workDays": ["Monday", "Wednesday", "Friday"],
+      "scheduleDetails": "Morning shifts, 8am to 2pm.",
+      "hourlyRate": 16.00,
+      "location": "Porto, Portugal",
+      "description": "Permanent part-time barista position. We are looking for a reliable team member for our morning crew.",
+      "postedAt": "2024-07-30T10:00:00Z"
+    },
+    {
+      "id": "job-2",
+      "businessName": "The Local Cafe",
+      "businessLogo": "https://i.pravatar.cc/150?u=cafe",
+      "role": "Waiter",
+      "startDate": "2024-09-15",
+      "workDays": ["Tuesday", "Thursday", "Saturday", "Sunday"],
+      "scheduleDetails": "Weekend availability is a must. Shifts are typically 6-8 hours.",
+      "hourlyRate": 14.50,
+      "location": "Lisbon, Portugal",
+      "description": "Seeking an enthusiastic waiter for a permanent part-time role. Great tips and a friendly team environment.",
+      "postedAt": "2024-08-01T12:00:00Z",
+      "applicants": ["user-nat"]
+    }
+  ],
+  "chats": [
+    {
+      "id": "chat-1",
+      "shiftId": "shift-1",
+      "participants": { "userId": "user-1", "businessId": "biz-1" },
+      "messages": [
+        { "id": "msg-1", "senderId": "biz-1", "text": "Hi Alice, we were very impressed with your profile. Are you available for a quick chat tomorrow?", "timestamp": "2024-07-25T10:00:00Z" },
+        { "id": "msg-2", "senderId": "user-1", "text": "Hi! Yes, absolutely. How about 10 AM?", "timestamp": "2024-07-25T10:05:00Z" }
+      ]
+    },
+    {
+      "id": "chat-2",
+      "shiftId": "shift-2",
+      "participants": { "userId": "user-4", "businessId": "biz-2" },
+      "messages": [
+        { "id": "msg-3", "senderId": "user-4", "text": "Hello, I saw your opening for a waiter. I have 5 years of experience and would love to be considered.", "timestamp": "2024-07-28T12:00:00Z" }
+      ]
+    }
+  ],
+  "websiteContent": {
+    "hero": {
+      "title": "Your Extra Shift, Made Easy.",
+      "subtitle": "Docky connects talented hospitality professionals with businesses for on-demand shifts. Find work that fits your schedule, or hire the staff you need, right when you need them."
+    },
+    "valueProps": {
+      "jobSeeker": {
+        "title": "For Job Seekers",
+        "subtitle": "Take control of your work life.",
+        "description": "",
+        "benefits": [
+          "Flexible hours, better pay.",
+          "Work at top-rated local businesses.",
+          "Get paid quickly and reliably."
+        ]
+      },
+      "business": {
+        "title": "For Businesses",
+        "subtitle": "Fill shifts in minutes, not days.",
+        "description": "",
+        "benefits": [
+          "Access a pool of vetted professionals.",
+          "Post a shift in seconds.",
+          "Manage everything in one simple dashboard."
+        ]
+      }
+    },
+    "appDownload": {
+      "title": "Get the full experience on our app",
+      "subtitle": "Manage your shifts, get instant notifications, and connect on the go. Download the Docky app today for the best experience."
+    }
+  },
+  "availabilityPosts": [
+    {
+      "id": "ap-1",
+      "userId": "user-nat",
+      "postedAt": "2024-07-28T10:00:00Z",
+      "lookingFor": ["Single Shifts", "Part-time Job"],
+      "availableDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "availableTimes": ["Morning", "Afternoon", "Evening"],
+      "roles": ["Waiter", "Barista", "KitchenStaff"],
+      "experienceSummary": "Experience working in the kitchen, as a waitress, barback, and a bit as a bartender.",
+      "languages": ["English (Fluent)", "Polish (Native)", "Portuguese (Basic)"],
+      "notes": "Available to start immediately (this week at the latest). Eager to contribute to a great team in Lisbon!"
+    },
+    {
+      "id": "ap-2",
+      "userId": "user-4",
+      "postedAt": "2024-07-27T14:30:00Z",
+      "lookingFor": ["Part-time Job"],
+      "availableDays": ["Tuesday", "Thursday", "Saturday", "Sunday"],
+      "availableTimes": ["Evening", "Night"],
+      "roles": ["Chef", "KitchenStaff"],
+      "experienceSummary": "Specializing in Mediterranean cuisine with over 10 years in the industry. Reliable, creative, and work well under pressure.",
+      "languages": ["Spanish (Native)", "English (Conversational)"],
+      "notes": "Looking for part-time evening shifts in Porto."
+    }
+  ]
+}
