@@ -209,7 +209,7 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <p className="text-slate-500 mb-8">Oversee and manage all platform activity from one central hub.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Total Users" value={users.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
+        <StatCard title="Total Users" value={jobSeekers.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
         <StatCard title="Total Businesses" value={businesses.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
         <StatCard title="Total Shifts" value={shifts.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
         <StatCard title="Total Shift Value" value={`€${totalShiftValue.toFixed(2)}`} icon={<CurrencyEuroIcon className="w-6 h-6 text-slate-500" />} />
