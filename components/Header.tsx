@@ -58,7 +58,7 @@ const Header: React.FC<{
   const NavLink: React.FC<{ view: View, children: React.ReactNode }> = ({ view, children }) => (
     <button
       onClick={() => onNavigate(view)}
-      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
         currentView === view
         ? 'bg-primary text-white'
         : 'text-slate-600 hover:bg-slate-200 hover:text-primary'
@@ -142,7 +142,7 @@ const Header: React.FC<{
             <span className="text-2xl">🐳</span>
             <h1 className="text-xl font-bold text-primary tracking-tighter">Docky</h1>
           </div>
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
             <NavLink view="home">{t('home')}</NavLink>
             <NavLink view="jobs">{t('jobs')}</NavLink>
             <NavLink view="availability">Find Talent</NavLink>
@@ -338,7 +338,7 @@ const Header: React.FC<{
                             </button>
                         </>
                     ) : (
-                        <div className="flex items-center gap-2 px-2">
+                        <div className="flex items-center gap-2">
                             <MobileNavLink
                                 view="login"
                                 isButton
