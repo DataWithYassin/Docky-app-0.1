@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { AvailabilityPost, User, Role, AvailabilityType, availabilityTypes } from '../types';
 import { StarIcon, LocationIcon, BriefcaseIcon, ChevronDownIcon, ListBulletIcon } from './Icons';
@@ -268,8 +269,9 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
     });
   }, [availabilityPosts, filterRole, filterJobType]);
 
-  const roles = ['All', ...Object.values(Role)];
-  const jobTypes = ['All', ...availabilityTypes];
+  const roles: (Role | 'All')[] = ['All', ...Object.values(Role)];
+  // FIX: Cast availabilityTypes to a string array to satisfy readonly string[] constraint.
+  const jobTypes: ('All' | AvailabilityType)[] = ['All', ...availabilityTypes as unknown as AvailabilityType[]];
 
   return (
     <div className="container mx-auto px-4 py-8">

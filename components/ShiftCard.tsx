@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Shift, Role, User, ShiftStatus } from '../types';
 import { StarIcon, LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon } from './Icons';
@@ -9,6 +10,7 @@ interface ShiftCardProps {
   isApplied: boolean;
   isLoggedIn: boolean;
   currentUser: User | null;
+  distance?: number | null;
 }
 
 const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
@@ -32,7 +34,7 @@ const getStatusBadgeClass = (status: ShiftStatus) => {
     }
 };
 
-const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLoggedIn, currentUser }) => {
+const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLoggedIn, currentUser, distance }) => {
   const getShiftDuration = (startTime: string, endTime: string): number => {
     const start = new Date(`1970-01-01T${startTime}:00`);
     const end = new Date(`1970-01-01T${endTime}:00`);
@@ -110,9 +112,16 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
                     </div>
                 )}
             </div>
-            <div className="flex items-center text-slate-500 text-sm mt-2">
-              <LocationIcon className="w-4 h-4 mr-1" />
-              <span>{shift.location}</span>
+            <div className="flex items-center text-slate-500 text-sm mt-2 flex-wrap gap-x-2">
+              <div className="flex items-center">
+                <LocationIcon className="w-4 h-4 mr-1" />
+                <span>{shift.location}</span>
+              </div>
+              {distance != null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                    {distance.toFixed(1)} km away
+                </span>
+              )}
               <span className="mx-2">&bull;</span>
               <span>{timeAgo(shift.postedAt)}</span>
             </div>

@@ -1,4 +1,21 @@
-// FIX: Removed self-import of 'Role' which was causing a conflict.
+
+
+export type View =
+  | 'home'
+  | 'jobs'
+  | 'availability'
+  | 'insights'
+  | 'login'
+  | 'register'
+  | 'jobSeekerRegister'
+  | 'jobAnnouncerRegister'
+  | 'profile'
+  | 'jobSeekerDashboard'
+  | 'business'
+  | 'adminDashboard'
+  | 'chatsList'
+  | 'chat';
+
 export enum Role {
   Chef = 'Chef',
   Barista = 'Barista',
@@ -8,180 +25,204 @@ export enum Role {
 }
 
 export enum ShiftStatus {
-  Open = 'Open',
-  Filled = 'Filled',
-  Completed = 'Completed',
-  Expired = 'Expired',
+    Open = 'Open',
+    Filled = 'Filled',
+    Completed = 'Completed',
+    Expired = 'Expired',
 }
 
 export enum ApplicationStatus {
-  Pending = 'Pending',
-  Accepted = 'Accepted',
-  Rejected = 'Rejected',
-  Confirmed = 'Confirmed',
+    Pending = 'Pending',
+    Accepted = 'Accepted',
+    Rejected = 'Rejected',
+    Confirmed = 'Confirmed',
 }
 
-export type UserType = 'JobSeeker' | 'Business';
+export type UserType = 'JobSeeker' | 'Business' | 'Admin';
 
-// FIX: Moved the View type here from App.tsx to avoid circular dependencies.
-export type View =
-  | 'home'
-  | 'jobs'
-  | 'insights'
-  | 'login'
-  | 'register'
-  | 'jobSeekerRegister'
-  | 'jobAnnouncerRegister'
-  | 'profile'
-  | 'business'
-  | 'jobSeekerDashboard'
-  | 'adminDashboard'
-  | 'chat'
-  | 'chatsList'
-  | 'availability';
-
+export interface Experience {
+    id: number;
+    position: string;
+    place: string;
+    location: string;
+    startDate: string;
+    endDate: string;
+}
 
 export interface Review {
-  id: string;
-  reviewerName: string;
-  reviewerAvatar: string;
-  rating: number;
-  comment: string;
-  date: string;
+    id: string;
+    reviewerName: string;
+    reviewerAvatar: string;
+    rating: number;
+    comment: string;
+    date: string;
 }
 
 export interface Application {
-  shiftId?: string;
-  jobId?: string;
-  status: ApplicationStatus;
+    shiftId?: string;
+    jobId?: string;
+    status: ApplicationStatus;
+    message?: string;
+}
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    avatar: string;
+    userType: UserType;
+    role: Role; // Predominant role for job seekers
+    location?: string;
+    rating: number;
+    reviewCount: number;
+    reviews?: Review[];
+    bio?: string;
+    skills?: string[];
+    experience?: Experience[];
+    applications?: Application[];
+    totalEarnings?: number;
+}
+
+export interface Coordinates {
+    lat: number;
+    lon: number;
+}
+
+export interface Shift {
+    id: string;
+    businessName: string;
+    businessId: string;
+    businessLogo: string;
+    role: Role;
+    date: string;
+    startTime: string;
+    endTime: string;
+    hourlyRate: number;
+    location: string;
+    description: string;
+    applicants: User[];
+    status: ShiftStatus;
+    postedAt: string;
+    rating?: number;
+    // FIX: Add optional filledAt property to match mock data.
+    filledAt?: string;
+    requirements?: string[];
+    languages?: string[];
+    coordinates?: Coordinates;
+    allowPreApplyMessaging?: boolean;
 }
 
 export const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 export type WeekDay = typeof weekDays[number];
 
 export interface Job {
-  id: string;
-  businessName: string;
-  businessLogo: string;
-  talentId?: string;
-  applicants?: User[];
-  role: Role;
-  startDate: string;
-  workDays: WeekDay[];
-  scheduleDetails: string;
-  hourlyRate: number;
-  location: string;
-  description: string;
-  postedAt: string;
+    id: string;
+    businessId: string;
+    businessName: string;
+    businessLogo: string;
+    role: Role;
+    startDate: string;
+    workDays: WeekDay[];
+    scheduleDetails: string;
+    hourlyRate: number;
+    location: string;
+    description: string;
+    talentId?: string | null; // Filled by which talent
+    postedAt: string;
+    applicants?: User[];
+    coordinates?: Coordinates;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email?: string;
-  avatar: string;
-  role: Role;
-  rating: number;
-  reviewCount: number;
-  userType: UserType;
-  totalEarnings?: number;
-  applications?: Application[];
-  location?: string;
-  bio?: string;
-  experience?: Experience[];
-  skills?: string[];
-  reviews?: Review[];
-  jobs?: Job[];
+export enum NotificationType {
+    APPLICATION_ACCEPTED = 'APPLICATION_ACCEPTED',
+    APPLICATION_REJECTED = 'APPLICATION_REJECTED',
+    NEW_MESSAGE = 'NEW_MESSAGE',
+    NEW_APPLICANT = 'NEW_APPLICANT',
+    SHIFT_CONFIRMED = 'SHIFT_CONFIRMED',
 }
 
-export interface Experience {
-  id: number;
-  position: string;
-  place: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface Shift {
-  id: string;
-  businessName: string;
-  businessLogo: string;
-  role: Role;
-  date: string;
-  startTime: string;
-  endTime: string;
-  hourlyRate: number;
-  location: string;
-  status: ShiftStatus;
-  applicants: User[];
-  acceptedApplicantId?: string;
-  description: string;
-  postedAt: string;
-  languages?: string[];
-  rating?: number;
-  requirements?: string[];
-  allowPreApplyMessaging?: boolean;
+export interface Notification {
+    id: string;
+    type: NotificationType;
+    message: string;
+    timestamp: string;
+    isRead: boolean;
+    relatedShiftId?: string;
+    relatedUserId?: string;
 }
 
 export interface Message {
-  id: string;
-  senderId: string;
-  text: string;
-  timestamp: string;
+    id: string;
+    senderId: string;
+    text: string;
+    timestamp: string;
 }
 
 export interface Chat {
-  id: string;
-  shiftId: string;
-  participants: { userId: string, businessId: string };
-  messages: Message[];
+    id: string;
+    participants: {
+        userId: string;
+        businessId: string;
+    };
+    shiftId: string;
+    messages: Message[];
 }
 
-export const availabilityTypes = ['Single Shifts', 'Part-time Job'] as const;
+export interface SavedSearchFilters {
+    postType: 'All' | 'Part-time Jobs' | 'Single Shifts';
+    roles: Role[];
+    cities: string[];
+    time: 'All' | 'Morning' | 'Afternoon' | 'Evening';
+    date: string;
+    userLocation: { lat: number, lon: number } | null;
+    searchRadius: number;
+}
+
+export interface SavedSearch {
+    id: string;
+    name: string;
+    filters: SavedSearchFilters;
+    notificationsEnabled: boolean;
+}
+
+export const availabilityTypes = ['Single Shifts', 'Part-time Job', 'Full-time Job'] as const;
 export type AvailabilityType = typeof availabilityTypes[number];
 
-export const timeSlots = ['Morning', 'Afternoon', 'Evening', 'Night'] as const;
+export const timeSlots = ['Morning (6am-12pm)', 'Afternoon (12pm-6pm)', 'Evening (6pm-12am)', 'Overnight (12am-6am)'] as const;
 export type TimeSlot = typeof timeSlots[number];
 
 export interface AvailabilityPost {
-  id: string;
-  userId: string;
-  postedAt: string;
-  lookingFor: AvailabilityType[];
-  availableDays: WeekDay[];
-  availableTimes: TimeSlot[];
-  roles: Role[];
-  experienceSummary: string;
-  languages: string[];
-  notes: string;
-}
-
-// Types for editable website content
-export interface HeroContent {
-  title: string;
-  subtitle: string;
-}
-
-export interface ValueProp {
-  title: string;
-  subtitle: string;
-  description: string;
-  benefits: string[];
-}
-
-export interface ValuePropsContent {
-  jobSeeker: ValueProp;
-  business: ValueProp;
-}
-
-export interface AppDownloadContent {
-    title: string;
-    subtitle: string;
+    id: string;
+    userId: string;
+    postedAt: string;
+    lookingFor: AvailabilityType[];
+    availableDays: WeekDay[];
+    availableTimes: TimeSlot[];
+    roles: Role[];
+    experienceSummary: string;
+    languages: string[];
+    notes: string;
 }
 
 export interface WebsiteContent {
-  hero: HeroContent;
-  valueProps: ValuePropsContent;
-  appDownload: AppDownloadContent;
+    hero: {
+        title: string;
+        subtitle: string;
+    };
+    valueProps: {
+        jobSeeker: {
+            title: string;
+            subtitle: string;
+            benefits: string[];
+        };
+        business: {
+            title: string;
+            subtitle: string;
+            benefits: string[];
+        };
+    };
+    appDownload: {
+        title: string;
+        subtitle: string;
+    };
 }

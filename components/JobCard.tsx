@@ -1,14 +1,16 @@
 
+
 import React from 'react';
-import { Job, Role, User } from '../types';
-import { LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon } from './Icons';
+import { Job, Role, User, ApplicationStatus } from '../types';
+import { LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon, ClockIcon, XCircleIcon } from './Icons';
 
 interface JobCardProps {
   job: Job;
   onApply: (jobId: string) => void;
-  isApplied: boolean;
+  applicationStatus: ApplicationStatus | null;
   isLoggedIn: boolean;
   currentUser: User | null;
+  distance?: number | null;
 }
 
 const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
@@ -19,7 +21,15 @@ const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
     [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
 };
 
-const JobCard: React.FC<JobCardProps> = ({ job, onApply, isApplied, isLoggedIn, currentUser }) => {
+const applicationStatusInfo: Record<ApplicationStatus, { text: string; classes: string; icon: React.ReactNode; }> = {
+    [ApplicationStatus.Pending]: { text: 'Pending', classes: 'bg-yellow-100 text-yellow-800', icon: <ClockIcon className="w-4 h-4" /> },
+    [ApplicationStatus.Accepted]: { text: 'Accepted', classes: 'bg-green-100 text-green-800', icon: <CheckCircleIcon className="w-4 h-4" /> },
+    [ApplicationStatus.Rejected]: { text: 'Rejected', classes: 'bg-red-100 text-red-800', icon: <XCircleIcon className="w-4 h-4" /> },
+    [ApplicationStatus.Confirmed]: { text: 'Confirmed', classes: 'bg-blue-100 text-blue-800', icon: <CheckCircleIcon className="w-4 h-4" /> },
+};
+
+
+const JobCard: React.FC<JobCardProps> = ({ job, onApply, applicationStatus, isLoggedIn, currentUser, distance }) => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(`${dateString}T00:00:00`);
@@ -71,9 +81,16 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, isApplied, isLoggedIn, 
                   Part-time
                 </span>
             </div>
-            <div className="flex items-center text-slate-500 text-sm mt-2">
-              <LocationIcon className="w-4 h-4 mr-1" />
-              <span>{job.location}</span>
+            <div className="flex items-center text-slate-500 text-sm mt-2 flex-wrap gap-x-2">
+              <div className="flex items-center">
+                <LocationIcon className="w-4 h-4 mr-1" />
+                <span>{job.location}</span>
+              </div>
+              {distance != null && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                    {distance.toFixed(1)} km away
+                </span>
+              )}
               <span className="mx-2">&bull;</span>
               <span>{timeAgo(job.postedAt)}</span>
             </div>
@@ -109,15 +126,13 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, isApplied, isLoggedIn, 
                     );
                   }
 
-                  if (isJobSeeker && isApplied) {
+                  if (isJobSeeker && applicationStatus) {
+                    const status = applicationStatusInfo[applicationStatus];
                     return (
-                      <button
-                        disabled
-                        className="bg-green-100 text-green-700 font-bold py-2 px-6 rounded-md w-full sm:w-auto flex items-center justify-center gap-2 cursor-not-allowed"
-                      >
-                        <CheckCircleIcon className="w-5 h-5" />
-                        Applied
-                      </button>
+                        <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-bold ${status.classes}`}>
+                            {status.icon}
+                            <span>Application {status.text}</span>
+                        </div>
                     );
                   }
 

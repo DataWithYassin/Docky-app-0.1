@@ -1,26 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import { Shift, User, Role } from '../types';
+import { Shift, User, ApplicationStatus } from '../types';
 import DayShiftsModal from './DayShiftsModal';
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from './Icons';
 
+type UserShift = { shift: Shift; status: ApplicationStatus };
+
 interface CalendarViewProps {
-  shifts: Shift[];
-  onApply: (shiftId: string) => void;
-  isLoggedIn: boolean;
-  user: User | null;
+  userShifts: UserShift[];
   currentDate: Date;
   onDateChange: (date: Date) => void;
 }
 
-const roleDotColors: Record<Role, string> = {
-    [Role.Chef]: 'bg-orange-500',
-    [Role.Barista]: 'bg-amber-500',
-    [Role.Waiter]: 'bg-indigo-500',
-    [Role.Host]: 'bg-rose-500',
-    [Role.KitchenStaff]: 'bg-slate-500',
+const statusDotColors: Record<ApplicationStatus, string> = {
+    [ApplicationStatus.Pending]: 'bg-yellow-500',
+    [ApplicationStatus.Accepted]: 'bg-green-500',
+    [ApplicationStatus.Rejected]: 'bg-red-500',
+    [ApplicationStatus.Confirmed]: 'bg-blue-500',
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn, user, currentDate, onDateChange }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ userShifts, currentDate, onDateChange }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -35,11 +33,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
   const monthHasShifts = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    return shifts.some(shift => {
+    return userShifts.some(({ shift }) => {
         const shiftDate = new Date(`${shift.date}T00:00:00`);
         return shiftDate.getFullYear() === year && shiftDate.getMonth() === month;
     });
-  }, [shifts, currentDate]);
+  }, [userShifts, currentDate]);
+
+  const getShiftsForDay = (day: number): UserShift[] => {
+    const year = currentDate.getFullYear();
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const dayString = day.toString().padStart(2, '0');
+    const dateStr = `${year}-${month}-${dayString}`;
+    return userShifts.filter(({ shift }) => shift.date === dateStr);
+  };
 
   const handleDayClick = (day: number) => {
     const shiftsOnDay = getShiftsForDay(day);
@@ -49,15 +55,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
         setIsModalOpen(true);
     }
   };
-
-  const getShiftsForDay = (day: number): Shift[] => {
-    const year = currentDate.getFullYear();
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const dayString = day.toString().padStart(2, '0');
-    const dateStr = `${year}-${month}-${dayString}`;
-    return shifts.filter(shift => shift.date === dateStr);
-  };
-  
 
   const changeMonth = (offset: number) => {
     onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
@@ -72,7 +69,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const shiftsOnDay = getShiftsForDay(day);
-      const rolesOnDay = [...new Set(shiftsOnDay.map(s => s.role))];
+      const statusesOnDay = [...new Set(shiftsOnDay.map(s => s.status))];
       const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
       const hasShifts = shiftsOnDay.length > 0;
       
@@ -81,17 +78,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
           key={day} 
           className={`border-r border-b border-slate-200 p-2 min-h-[100px] flex flex-col transition-colors ${hasShifts ? 'cursor-pointer hover:bg-slate-50' : 'bg-slate-50/50'}`} 
           onClick={() => handleDayClick(day)}
-          title={hasShifts ? `Click to view ${shiftsOnDay.length} shift(s)` : 'No shifts available'}
+          title={hasShifts ? `Click to view ${shiftsOnDay.length} shift(s)` : 'No shifts on this day'}
         >
           <div className={`font-semibold text-sm self-start ${isToday ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center' : 'text-slate-700'}`}>{day}</div>
           {hasShifts && (
             <div className="mt-2 flex-grow flex items-end">
               <div className="flex flex-wrap gap-1">
-                {rolesOnDay.slice(0, 4).map(role => (
-                    <div key={role} className={`w-2 h-2 rounded-full ${roleDotColors[role]}`} title={role}></div>
+                {statusesOnDay.slice(0, 4).map(status => (
+                    <div key={status} className={`w-2 h-2 rounded-full ${statusDotColors[status]}`} title={status}></div>
                 ))}
-                {rolesOnDay.length > 4 && (
-                    <div className="w-2 h-2 rounded-full bg-slate-300" title={`${rolesOnDay.length - 4} more`}></div>
+                {statusesOnDay.length > 4 && (
+                    <div className="w-2 h-2 rounded-full bg-slate-300" title={`${statusesOnDay.length - 4} more`}></div>
                 )}
               </div>
             </div>
@@ -127,7 +124,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
         <div className="text-center py-16 px-6 border-t border-slate-200">
             <CalendarIcon className="w-16 h-16 text-slate-300 mx-auto" />
             <h3 className="text-xl font-semibold text-primary mt-4">No Shifts This Month</h3>
-            <p className="text-slate-500 mt-2 max-w-md mx-auto">There are no available shifts that match your filters for this month. Try a different month or adjust your filters.</p>
+            <p className="text-slate-500 mt-2 max-w-md mx-auto">You have no pending or confirmed shifts for this month. Go to the 'Jobs' page to find new opportunities!</p>
         </div>
       )}
 
@@ -136,10 +133,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ shifts, onApply, isLoggedIn
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             date={selectedDate}
-            shifts={getShiftsForDay(selectedDate.getDate())}
-            onApply={onApply}
-            isLoggedIn={isLoggedIn}
-            currentUser={user}
+            shiftsWithStatus={getShiftsForDay(selectedDate.getDate())}
         />
       )}
     </div>

@@ -9,10 +9,11 @@ interface PostShiftModalProps {
   onClose: () => void;
   onAddShift: (shift: ShiftData) => void;
   onAddJob: (job: PartTimeJobData) => void;
+  currentUser: User | null;
   hiringTalent?: User | null;
 }
 
-const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddShift, onAddJob, hiringTalent }) => {
+const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddShift, onAddJob, hiringTalent, currentUser }) => {
   const [postType, setPostType] = useState<'shift' | 'part-time'>('shift');
   const [selectedDays, setSelectedDays] = useState<Set<WeekDay>>(new Set());
 
@@ -34,8 +35,16 @@ const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddS
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
+    if (!currentUser || currentUser.userType !== 'Business') {
+      console.error("A business user must be logged in to post a job or shift.");
+      onClose();
+      return;
+    }
+
     if (postType === 'part-time') {
         const newJob: PartTimeJobData = {
+          // FIX: Add businessId from the current user to satisfy the PartTimeJobData type.
+          businessId: currentUser.id,
           role: formData.get('role') as Role,
           startDate: formData.get('startDate') as string,
           workDays: Array.from(selectedDays),
@@ -47,6 +56,8 @@ const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddS
         onAddJob(newJob);
     } else {
       const newShift: ShiftData = {
+        // FIX: Add businessId from the current user to satisfy the ShiftData type.
+        businessId: currentUser.id,
         role: formData.get('role') as Role,
         date: formData.get('date') as string,
         startTime: formData.get('startTime') as string,

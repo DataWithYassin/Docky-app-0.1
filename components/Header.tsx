@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, User, Role } from '../types';
-import { ChevronDownIcon, Bars3Icon, XMarkIcon, FlagUKIcon, FlagESIcon, FlagPTIcon } from './Icons';
+import { View, User, Role, Notification } from '../types';
+import { BellIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, FlagUKIcon, FlagESIcon, FlagPTIcon } from './Icons';
 import { useLanguage, Language } from '../context/LanguageContext';
 import { useTranslations } from '../hooks/useTranslations';
+import NotificationPanel from './NotificationPanel';
 
 const languageOptions: Record<Language, { name: string, flag: React.ReactNode }> = {
     en: { name: 'English', flag: <FlagUKIcon className="w-5 h-5 rounded-sm" /> },
@@ -25,27 +26,41 @@ const Header: React.FC<{
   isLoggedIn: boolean;
   user: User | null;
   onLogout: () => void;
-}> = ({ currentView, onNavigate, isLoggedIn, user, onLogout }) => {
+  notifications: Notification[];
+  onNotificationClick: (notification: Notification) => void;
+  onMarkAllNotificationsAsRead: () => void;
+}> = ({ currentView, onNavigate, isLoggedIn, user, onLogout, notifications, onNotificationClick, onMarkAllNotificationsAsRead }) => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const langDropdownRef = useRef<HTMLDivElement>(null);
+  const notificationPanelRef = useRef<HTMLDivElement>(null);
   const mobileMenuPanelRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslations();
+  const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
   
   const toggleProfileDropdown = () => {
     setIsProfileDropdownOpen(p => !p);
     setIsLangDropdownOpen(false);
+    setIsNotificationPanelOpen(false);
   };
   
   const toggleLangDropdown = () => {
     setIsLangDropdownOpen(p => !p);
     setIsProfileDropdownOpen(false);
+    setIsNotificationPanelOpen(false);
+  };
+
+  const toggleNotificationPanel = () => {
+    setIsNotificationPanelOpen(p => !p);
+    setIsProfileDropdownOpen(false);
+    setIsLangDropdownOpen(false);
   };
 
   const NavLink: React.FC<{ view: View, children: React.ReactNode }> = ({ view, children }) => (
@@ -86,6 +101,9 @@ const Header: React.FC<{
         if (langDropdownRef.current && !langDropdownRef.current.contains(target)) {
             setIsLangDropdownOpen(false);
         }
+        if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
+            setIsNotificationPanelOpen(false);
+        }
         if (
             isMobileMenuOpen &&
             mobileMenuPanelRef.current && !mobileMenuPanelRef.current.contains(target) &&
@@ -98,7 +116,7 @@ const Header: React.FC<{
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isMobileMenuOpen, isProfileDropdownOpen, isLangDropdownOpen]);
+  }, [isMobileMenuOpen, isProfileDropdownOpen, isLangDropdownOpen, isNotificationPanelOpen]);
   
   useEffect(() => {
     const handleResize = () => {
@@ -169,6 +187,33 @@ const Header: React.FC<{
                     </div>
                 )}
             </div>
+            
+            {isLoggedIn && (
+              <div className="relative" ref={notificationPanelRef}>
+                <button
+                  onClick={toggleNotificationPanel}
+                  className="relative p-2 rounded-full hover:bg-slate-200 transition-colors"
+                  aria-label="Notifications"
+                >
+                  <BellIcon className="w-6 h-6 text-slate-600" />
+                  {unreadNotificationCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                </button>
+                {isNotificationPanelOpen && (
+                  <NotificationPanel
+                    notifications={notifications}
+                    onNotificationClick={onNotificationClick}
+                    onMarkAllAsRead={onMarkAllNotificationsAsRead}
+                    onClose={() => setIsNotificationPanelOpen(false)}
+                  />
+                )}
+              </div>
+            )}
+
             {isLoggedIn && user ? (
               <div className="relative" ref={profileDropdownRef}>
                 <button

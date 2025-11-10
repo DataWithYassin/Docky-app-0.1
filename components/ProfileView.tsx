@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { User, Experience, Review as ReviewType, Chat, Shift } from '../types';
-import { StarIcon, LocationIcon, BriefcaseIcon, PencilIcon, VerificationIcon } from './Icons';
+import { StarIcon, LocationIcon, BriefcaseIcon, PencilIcon, VerificationIcon, LightBulbIcon, CheckCircleIcon } from './Icons';
 
 interface ProfileViewProps {
   user: User;
@@ -9,6 +9,103 @@ interface ProfileViewProps {
   allUsers?: User[];
   onOpenChat?: (chatId: string) => void;
 }
+
+const ProfileStrength: React.FC<{ score: number }> = ({ score }) => {
+    const radius = 50;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (score / 100) * circumference;
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
+            <h3 className="text-xl font-bold text-primary mb-4">Profile Strength</h3>
+            <div className="relative w-32 h-32">
+                <svg className="w-full h-full" viewBox="0 0 120 120">
+                    <circle
+                        className="text-slate-200"
+                        strokeWidth="10"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r={radius}
+                        cx="60"
+                        cy="60"
+                    />
+                    <circle
+                        className="text-accent"
+                        strokeWidth="10"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r={radius}
+                        cx="60"
+                        cy="60"
+                        transform="rotate(-90 60 60)"
+                        style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                    />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-3xl font-bold text-primary">
+                    {score}%
+                </span>
+            </div>
+        </div>
+    );
+};
+
+const ActionableTips: React.FC<{ user: User }> = ({ user }) => {
+    const tips: { id: string; text: string }[] = [];
+    if (!user.bio || user.bio.length < 50) {
+        tips.push({ id: 'bio', text: "A detailed bio (50+ characters) increases your hiring chances by 40%." });
+    }
+    if (!user.skills || user.skills.length < 3) {
+        tips.push({ id: 'skills', text: "Add at least 3 skills to get noticed by top businesses." });
+    }
+    if (!user.experience || user.experience.length < 1) {
+        tips.push({ id: 'experience', text: "Showcase your history by adding at least one work experience." });
+    }
+    if (!user.location) {
+        tips.push({ id: 'location', text: "Add your city to appear in location-based searches." });
+    }
+
+    if (tips.length === 0) return (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-bold text-primary mb-4 flex items-center gap-2">
+                <LightBulbIcon className="w-6 h-6 text-amber-400" />
+                Profile Strength
+            </h3>
+            <div className="flex items-center gap-3 p-3 bg-green-50 text-green-700 rounded-lg">
+                <CheckCircleIcon className="w-6 h-6"/>
+                <p className="text-sm font-semibold">Your profile is looking great! You're all set to apply.</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-bold text-primary mb-4 flex items-center gap-2">
+                <LightBulbIcon className="w-6 h-6 text-amber-400" />
+                How to Improve
+            </h3>
+            <ul className="space-y-3">
+                {tips.map((tip) => (
+                    <li key={tip.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg transition-colors hover:bg-slate-100">
+                        <div className="flex items-start pr-4">
+                            <span className="text-accent mt-0.5">💡</span>
+                            <span className="text-sm text-slate-700 ml-2">{tip.text}</span>
+                        </div>
+                        <button 
+                            onClick={() => alert('This would take you to the profile edit screen.')}
+                            className="text-xs font-bold text-accent hover:underline flex-shrink-0 whitespace-nowrap"
+                        >
+                            Improve &rarr;
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
 
 const ProfileHeader: React.FC<{ user: User }> = ({ user }) => (
   <div className="bg-white p-6 md:p-8 rounded-t-lg shadow-md">
@@ -224,6 +321,16 @@ const BusinessChatsList: React.FC<{
 
 
 const ProfileView: React.FC<ProfileViewProps> = ({ user, chats, shifts, allUsers, onOpenChat }) => {
+  const profileStrengthScore = useMemo(() => {
+    if (user.userType !== 'JobSeeker') return 0;
+    let score = 0;
+    if (user.bio && user.bio.length >= 50) score += 30;
+    if (user.skills && user.skills.length >= 3) score += 30;
+    if (user.experience && user.experience.length >= 1) score += 30;
+    if (user.location) score += 10;
+    return score;
+  }, [user]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
@@ -235,6 +342,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, chats, shifts, allUsers
                 <ReviewsSection reviews={user.reviews} />
             </main>
             <aside className="space-y-8">
+                {user.userType === 'JobSeeker' && (
+                  <>
+                    <ProfileStrength score={profileStrengthScore} />
+                    <ActionableTips user={user} />
+                  </>
+                )}
                 {user.userType === 'JobSeeker' && <SidebarSection title="Skills" items={user.skills} />}
                 <VerificationSection />
             </aside>

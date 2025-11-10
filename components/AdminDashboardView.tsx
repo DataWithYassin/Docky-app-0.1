@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Shift, ShiftStatus, Role, WebsiteContent } from '../types';
 import EditUserModal from './EditUserModal';
@@ -146,13 +144,7 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const statusCounts = shifts.reduce((acc, shift) => {
     acc[shift.status] = (acc[shift.status] || 0) + 1;
     return acc;
-    // FIX: Changed Record<ShiftStatus, number> to Record<string, number>.
-    // Record<Enum, Type> requires all enum members to be present as keys, which is not true for an empty initial object.
-    // This was causing a type inference issue.
   }, {} as Record<string, number>);
-  // FIX: Explicitly cast the result of `Object.values` to `number[]`. This is necessary to
-  // resolve a type error where the values were inferred as `unknown`, which is not
-  // assignable to the `number` parameters of `Math.max`.
   const maxStatusCount = Math.max(...Object.values(statusCounts) as number[], 0);
   
   const TableHeader: React.FC<{children: React.ReactNode}> = ({children}) => (
@@ -211,7 +203,7 @@ const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard title="Total Users" value={users.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
         <StatCard title="Total Businesses" value={businesses.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
-        <StatCard title="Total Shifts" value={shifts.length} icon={<UsersIcon className="w-6 h-6 text-slate-500" />} />
+        <StatCard title="Total Shifts" value={shifts.length} icon={<ChartBarIcon className="w-6 h-6 text-slate-500" />} />
         <StatCard title="Total Shift Value" value={`€${totalShiftValue.toFixed(2)}`} icon={<CurrencyEuroIcon className="w-6 h-6 text-slate-500" />} />
       </div>
       
