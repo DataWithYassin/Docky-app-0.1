@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Shift, Role, User, ShiftStatus } from '../types';
+import { Shift, Role, User, ShiftStatus, RoleDetail } from '../types';
 import { StarIcon, LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon } from './Icons';
 
 interface ShiftCardProps {
@@ -11,15 +11,8 @@ interface ShiftCardProps {
   isLoggedIn: boolean;
   currentUser: User | null;
   distance?: number | null;
+  roleDetails: RoleDetail[];
 }
-
-const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
-    [Role.Chef]: { emoji: '👨‍🍳', classes: 'bg-orange-100 text-orange-800' },
-    [Role.Barista]: { emoji: '☕️', classes: 'bg-amber-100 text-amber-800' },
-    [Role.Waiter]: { emoji: '🤵', classes: 'bg-blue-100 text-blue-800' },
-    [Role.Host]: { emoji: '👋', classes: 'bg-rose-100 text-rose-800' },
-    [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
-};
 
 const getStatusBadgeClass = (status: ShiftStatus) => {
     switch (status) {
@@ -34,7 +27,7 @@ const getStatusBadgeClass = (status: ShiftStatus) => {
     }
 };
 
-const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLoggedIn, currentUser, distance }) => {
+const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLoggedIn, currentUser, distance, roleDetails }) => {
   const getShiftDuration = (startTime: string, endTime: string): number => {
     const start = new Date(`1970-01-01T${startTime}:00`);
     const end = new Date(`1970-01-01T${endTime}:00`);
@@ -75,7 +68,7 @@ const ShiftCard: React.FC<ShiftCardProps> = ({ shift, onApply, isApplied, isLogg
 
   const duration = getShiftDuration(shift.startTime, shift.endTime);
   const totalPay = duration * shift.hourlyRate;
-  const badge = roleBadges[shift.role] || { emoji: '🍽️', classes: 'bg-cyan-100 text-cyan-800' };
+  const badge = roleDetails.find(r => r.name === shift.role) || { emoji: '🍽️', classes: 'bg-cyan-100 text-cyan-800' };
 
   const isJobSeeker = isLoggedIn && currentUser?.userType === 'JobSeeker';
 

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { User, Role, UserType } from '../types';
+// FIX: Import RoleDetail to use for props
+import { User, Role, UserType, RoleDetail, UserStatus } from '../types';
 
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
   onSave: (updatedUser: User) => void;
+  // FIX: Add roleDetails to props to populate the roles dropdown
+  roleDetails: RoleDetail[];
 }
 
 const InputField: React.FC<{label: string, name: string, type: string, value: string | number, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}> = ({ label, name, type, value, onChange }) => (
@@ -22,7 +25,9 @@ const InputField: React.FC<{label: string, name: string, type: string, value: st
     </div>
 );
 
-const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, onSave }) => {
+const userStatuses: UserStatus[] = ['Active', 'Suspended', 'Verified'];
+
+const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, onSave, roleDetails }) => {
   const [formData, setFormData] = useState<User | null>(null);
 
   useEffect(() => {
@@ -89,17 +94,24 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                          <div>
                             <label htmlFor="role" className="block text-sm font-medium text-slate-700">Role</label>
                             <select id="role" name="role" value={formData.role} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-accent focus:border-accent sm:text-sm">
-                                {Object.values(Role).map(role => (
-                                    <option key={role} value={role}>{role}</option>
+                                {/* FIX: 'Role' is a type and cannot be used as a value. Use roleDetails prop to populate roles. */}
+                                {roleDetails.map(role => (
+                                    <option key={role.name} value={role.name}>{role.name}</option>
                                 ))}
                             </select>
                         </div>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <InputField label="Rating" name="rating" type="number" value={formData.rating} onChange={handleNumericChange} />
                     <InputField label="Review Count" name="reviewCount" type="number" value={formData.reviewCount} onChange={handleNumericChange} />
+                    <div>
+                        <label htmlFor="status" className="block text-sm font-medium text-slate-700">Status</label>
+                        <select id="status" name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-accent focus:border-accent sm:text-sm">
+                           {userStatuses.map(status => <option key={status} value={status}>{status}</option>)}
+                        </select>
+                    </div>
                 </div>
             </div>
             <div className="p-6 bg-slate-50 flex justify-end items-center space-x-3 rounded-b-lg">

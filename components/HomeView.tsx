@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Shift, User, WebsiteContent } from '../types';
+import { View, Shift, User, WebsiteContent, RoleDetail } from '../types';
 import ShiftCard from './ShiftCard';
-import { CheckCircleIcon, AppStoreBadgeIcon, GooglePlayBadgeIcon } from './Icons';
+import { CheckCircleIcon, AppStoreBadgeIcon, GooglePlayBadgeIcon, UsersIcon, BriefcaseIcon, LocationIcon } from './Icons';
 
 interface HomeViewProps {
   onNavigate: (view: View) => void;
@@ -11,6 +11,13 @@ interface HomeViewProps {
   content: WebsiteContent;
   onApply: (shiftId: string) => void;
   businesses: User[];
+  roleDetails: RoleDetail[];
+  stats: {
+    jobSeekers: number;
+    businesses: number;
+    completedShifts: number;
+    cities: number;
+  }
 }
 
 const ValuePropCard: React.FC<{
@@ -78,16 +85,20 @@ const ValuePropCard: React.FC<{
   );
 };
 
-const LogoMarquee: React.FC<{ logos: { id: string; name: string; avatar?: string; src?: string }[]; reverse?: boolean; }> = ({ logos, reverse = false }) => {
+const LogoMarquee: React.FC<{ logos: { id: string; name: string; avatar?: string; }[]; reverse?: boolean; }> = ({ logos, reverse = false }) => {
     const animationClass = reverse ? 'animate-marquee-reverse' : 'animate-marquee';
-    const allLogos = [...logos, ...logos, ...logos, ...logos]; // Duplicate for seamless loop
+    if (!logos || logos.length === 0) return null;
+    const allLogos = [...logos, ...logos]; // Duplicate for seamless loop
 
     return (
-        <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
-            <ul className={`flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none ${animationClass}`}>
+        <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear_gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+            <ul className={`flex items-center justify-center md:justify-start gap-12 ${animationClass}`}>
                 {allLogos.map((logo, index) => (
-                    <li key={`${logo.id}-${index}`}>
-                        <img src={logo.avatar || logo.src} alt={logo.name} className="h-10 w-auto grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300" title={logo.name} />
+                    <li key={`${logo.id}-${index}`} className="flex-shrink-0">
+                        <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center justify-center w-56 h-56 transition-transform hover:-translate-y-1 hover:shadow-lg">
+                            <img src={logo.avatar} alt={logo.name} className="h-32 w-32 rounded-full object-cover border-2 border-slate-100" />
+                            <p className="mt-4 font-semibold text-primary text-center text-base w-full">{logo.name}</p>
+                        </div>
                     </li>
                 ))}
             </ul>
@@ -95,30 +106,118 @@ const LogoMarquee: React.FC<{ logos: { id: string; name: string; avatar?: string
     );
 };
 
-const partnerLogos = [
-  { id: 'transistor', name: 'Transistor', src: 'https://tailwindui.com/img/logos/158x48/transistor-logo-gray-900.svg' },
-  { id: 'reform', name: 'Reform', src: 'https://tailwindui.com/img/logos/158x48/reform-logo-gray-900.svg' },
-  { id: 'tuple', name: 'Tuple', src: 'https://tailwindui.com/img/logos/158x48/tuple-logo-gray-900.svg' },
-  { id: 'savvycal', name: 'SavvyCal', src: 'https://tailwindui.com/img/logos/158x48/savvycal-logo-gray-900.svg' },
-  { id: 'statamic', name: 'Statamic', src: 'https://tailwindui.com/img/logos/158x48/statamic-logo-gray-900.svg' },
-  { id: 'transistor2', name: 'Transistor', src: 'https://tailwindui.com/img/logos/158x48/transistor-logo-gray-900.svg' },
-  { id: 'reform2', name: 'Reform', src: 'https://tailwindui.com/img/logos/158x48/reform-logo-gray-900.svg' },
-  { id: 'tuple2', name: 'Tuple', src: 'https://tailwindui.com/img/logos/158x48/tuple-logo-gray-900.svg' },
-];
+const useCountUp = (endValue: number, duration: number = 2000) => {
+    const [count, setCount] = useState(0);
+    const ref = useRef<HTMLSpanElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    let start = 0;
+                    const end = endValue;
+                    const startTime = Date.now();
+
+                    const frame = () => {
+                        const now = Date.now();
+                        const progress = Math.min((now - startTime) / duration, 1);
+                        const current = Math.floor(progress * (end - start) + start);
+                        setCount(current);
+                        if (progress < 1) {
+                            requestAnimationFrame(frame);
+                        }
+                    };
+                    requestAnimationFrame(frame);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentRef = ref.current;
+        if (currentRef) {
+            observer.observe(currentRef);
+        }
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef);
+            }
+        };
+    }, [endValue, duration]);
+
+    return { count, ref };
+};
 
 
-const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, user, content, onApply, businesses }) => {
+const StatItem: React.FC<{ value: number; label: string; icon: React.ReactNode; iconBgColor: string; }> = ({ value, label, icon, iconBgColor }) => {
+    const { count, ref } = useCountUp(value);
+    return (
+        <div className="flex items-center gap-4">
+            <div className={`${iconBgColor} p-4 rounded-full`}>{icon}</div>
+            <div>
+                <span ref={ref} className="text-3xl font-bold text-primary block">{count.toLocaleString()}</span>
+                <span className="text-slate-500">{label}</span>
+            </div>
+        </div>
+    );
+};
+
+const StatsSection: React.FC<{ stats: HomeViewProps['stats'] }> = ({ stats }) => (
+    <section className="container mx-auto px-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h2 className="text-center text-3xl font-bold text-primary mb-8">Our Community by the Numbers</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <StatItem 
+                    value={stats.jobSeekers} 
+                    label="Job Seekers" 
+                    icon={<UsersIcon className="w-6 h-6 text-blue-600"/>} 
+                    iconBgColor="bg-blue-100"
+                />
+                <StatItem 
+                    value={stats.businesses} 
+                    label="Businesses" 
+                    icon={<BriefcaseIcon className="w-6 h-6 text-purple-600"/>} 
+                    iconBgColor="bg-purple-100"
+                />
+                <StatItem 
+                    value={stats.completedShifts} 
+                    label="Shifts Completed" 
+                    icon={<CheckCircleIcon className="w-6 h-6 text-green-600"/>} 
+                    iconBgColor="bg-green-100"
+                />
+                <StatItem 
+                    value={stats.cities} 
+                    label="Cities Covered" 
+                    icon={<LocationIcon className="w-6 h-6 text-orange-600"/>} 
+                    iconBgColor="bg-orange-100"
+                />
+            </div>
+        </div>
+    </section>
+);
+
+
+const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, user, content, onApply, businesses, roleDetails, stats }) => {
   const openShifts = shifts.filter(s => s.status === 'Open').slice(0, 3);
   const heroImage = "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2070&auto=format&fit=crop";
+  const mockPartners = [
+    { id: 'partner-1', name: 'Innovate Corp', avatar: 'https://i.pravatar.cc/150?u=partner-1' },
+    { id: 'partner-2', name: 'Tech Solutions', avatar: 'https://i.pravatar.cc/150?u=partner-2' },
+    { id: 'partner-3', name: 'Future Ventures', avatar: 'https://i.pravatar.cc/150?u=partner-3' },
+    { id: 'partner-4', name: 'Eco Systems', avatar: 'https://i.pravatar.cc/150?u=partner-4' },
+    { id: 'partner-5', name: 'HealthFirst', avatar: 'https://i.pravatar.cc/150?u=partner-5' },
+    { id: 'partner-6', name: 'EduGrowth', avatar: 'https://i.pravatar.cc/150?u=partner-6' },
+  ];
 
   return (
-    <div className="space-y-16 sm:space-y-24">
+    <div className="space-y-12 sm:space-y-20">
       {/* Hero Section */}
       <section
         className="relative pt-20 pb-24 px-4 text-center bg-cover bg-center"
         style={{ backgroundImage: `url(${heroImage})` }}
       >
-        <div className="absolute inset-0 bg-primary/70 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-primary/50 backdrop-blur-sm"></div>
         <div className="relative container mx-auto">
           <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tighter drop-shadow-lg">
             {content.hero.title}
@@ -169,9 +268,28 @@ const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, use
           </div>
       </section>
 
+      {/* Stats Section */}
+      <StatsSection stats={stats} />
+
+      {/* Trusted By */}
+      <section className="py-12 bg-slate-50">
+        <div className="container mx-auto px-4">
+            <h2 className="text-center text-3xl font-bold text-primary mb-12">Trusted by Leading Local Businesses</h2>
+            <LogoMarquee logos={businesses} />
+        </div>
+      </section>
+
+      {/* Our Partners */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+            <h2 className="text-center text-3xl font-bold text-primary mb-12">Our Proud Partners</h2>
+            <LogoMarquee logos={mockPartners} reverse />
+        </div>
+      </section>
+
       {/* Featured Shifts */}
       {openShifts.length > 0 && (
-        <section className="pt-16">
+        <section className="bg-white py-12 sm:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-bold text-primary tracking-tight">Featured Shifts</h2>
@@ -186,6 +304,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, use
                   isLoggedIn={isLoggedIn}
                   isApplied={user?.applications?.some(app => app.shiftId === shift.id) ?? false}
                   currentUser={user}
+                  roleDetails={roleDetails}
                 />
               ))}
             </div>
@@ -200,67 +319,27 @@ const HomeView: React.FC<HomeViewProps> = ({ onNavigate, shifts, isLoggedIn, use
           </div>
         </section>
       )}
-
-      {/* Trusted By */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-            <h2 className="text-center text-2xl font-bold text-primary mb-8">Trusted by Top Local Businesses</h2>
-            <LogoMarquee logos={businesses.slice(0, 8)} />
-        </div>
-      </section>
       
       {/* App Download */}
       <section className="container mx-auto px-4">
-        <div className="relative bg-slate-900 rounded-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-700/50 to-slate-900"></div>
-          <div className="relative grid md:grid-cols-2 items-center gap-8 p-8 md:p-16">
+        <div className="bg-primary rounded-2xl p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-8 text-white">
             <div className="text-center md:text-left">
-              <h2 className="text-4xl font-extrabold tracking-tight text-white">{content.appDownload.title}</h2>
-              <p className="mt-4 text-lg text-slate-300 max-w-xl">
+              <h2 className="text-3xl font-extrabold tracking-tight">{content.appDownload.title}</h2>
+              <p className="mt-2 text-slate-300 max-w-2xl">
                 {content.appDownload.subtitle}
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start items-center gap-4">
-                <a href="#" aria-label="Download on the App Store" className="transition-transform hover:scale-105">
-                  <AppStoreBadgeIcon />
-                </a>
-                <a href="#" aria-label="Get it on Google Play" className="transition-transform hover:scale-105">
-                  <GooglePlayBadgeIcon />
-                </a>
-              </div>
             </div>
-            <div className="relative h-[450px] w-[225px] mx-auto hidden md:block">
-              <div className="absolute inset-0 bg-primary rounded-[2rem] border-[10px] border-slate-700"></div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-5 bg-slate-700 rounded-b-lg"></div>
-              <div className="absolute inset-2 bg-slate-100 rounded-[1.25rem] p-3 overflow-hidden">
-                <div className="w-full h-full space-y-2 animate-pulse">
-                  <div className="flex justify-between items-center">
-                    <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
-                    <div className="w-1/2 h-3 bg-slate-200 rounded"></div>
-                  </div>
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className={`p-2 bg-white rounded-lg shadow space-y-1.5 ${i > 2 ? 'opacity-50' : ''}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-slate-200 rounded-full"></div>
-                        <div className="w-1/2 h-2.5 bg-slate-200 rounded"></div>
-                      </div>
-                      <div className="w-full h-2 bg-slate-200 rounded"></div>
-                      <div className="w-3/4 h-2 bg-slate-200 rounded"></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="flex-shrink-0 flex items-center gap-4">
+              <a href="#" aria-label="Download on the App Store" className="transition-transform hover:scale-105">
+                <AppStoreBadgeIcon />
+              </a>
+              <a href="#" aria-label="Get it on Google Play" className="transition-transform hover:scale-105">
+                <GooglePlayBadgeIcon />
+              </a>
             </div>
-          </div>
         </div>
       </section>
 
-      {/* Partners */}
-      <section className="py-16">
-          <div className="container mx-auto px-4">
-              <h2 className="text-center text-2xl font-bold text-primary mb-8">Our Proud Partners</h2>
-              <LogoMarquee logos={partnerLogos} reverse={true} />
-          </div>
-      </section>
     </div>
   );
 };

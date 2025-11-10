@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Chat, User, Message, Shift } from '../types';
-import { CalendarIcon, ClockIcon } from './Icons';
+import { CalendarIcon, ClockIcon, FaceSmileIcon } from './Icons';
 
 interface ChatViewProps {
   chat: Chat;
@@ -13,7 +13,9 @@ interface ChatViewProps {
 
 const ChatView: React.FC<ChatViewProps> = ({ chat, currentUser, chatPartner, shift, onSendMessage, onBack }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const emojiAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,6 +24,18 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, currentUser, chatPartner, shi
   useEffect(() => {
     scrollToBottom();
   }, [chat.messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiAreaRef.current && !emojiAreaRef.current.contains(event.target as Node)) {
+        setIsEmojiPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSend = () => {
     if (newMessage.trim()) {
@@ -43,6 +57,12 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, currentUser, chatPartner, shi
       hour12: true
     });
   }
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+  };
+  
+  const emojis = ['👋', '👍', '✅', '❌', '😊', '😂', '🙏', '🎉', '📅', '🕒', '💰', '👨‍🍳', '☕️', '🍽️', '🤔', '🏃‍♂️'];
 
   return (
     <div className="container mx-auto px-4 py-8 h-[calc(100vh-150px)]">
@@ -88,6 +108,34 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, currentUser, chatPartner, shi
         {/* Input */}
         <div className="p-4 border-t bg-white">
           <div className="flex items-center gap-2">
+            <div className="relative" ref={emojiAreaRef}>
+              <button
+                type="button"
+                onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 transition-colors"
+                aria-label="Add emoji"
+              >
+                <FaceSmileIcon className="w-6 h-6" />
+              </button>
+
+              {isEmojiPickerOpen && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white p-2 rounded-lg shadow-lg border border-slate-200 z-10 w-64">
+                  <div className="grid grid-cols-6 gap-2">
+                    {emojis.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleEmojiSelect(emoji)}
+                        className="text-2xl p-1 rounded-md hover:bg-slate-100 transition-colors"
+                        aria-label={emoji}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <input
               type="text"
               value={newMessage}

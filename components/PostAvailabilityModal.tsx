@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AvailabilityPost, AvailabilityType, availabilityTypes, WeekDay, weekDays, TimeSlot, timeSlots, Role } from '../types';
+import { AvailabilityPost, AvailabilityType, availabilityTypes, WeekDay, weekDays, TimeSlot, timeSlots, Role, RoleDetail } from '../types';
 
 type PostData = Omit<AvailabilityPost, 'id' | 'userId' | 'postedAt'>;
 
@@ -7,6 +7,7 @@ interface PostAvailabilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPost: (data: PostData) => void;
+  roleDetails: RoleDetail[];
 }
 
 const CheckboxGroup: React.FC<{
@@ -29,7 +30,7 @@ const CheckboxGroup: React.FC<{
 );
 
 
-const PostAvailabilityModal: React.FC<PostAvailabilityModalProps> = ({ isOpen, onClose, onPost }) => {
+const PostAvailabilityModal: React.FC<PostAvailabilityModalProps> = ({ isOpen, onClose, onPost, roleDetails }) => {
   const [lookingFor, setLookingFor] = useState<Set<AvailabilityType>>(new Set());
   const [availableDays, setAvailableDays] = useState<Set<WeekDay>>(new Set());
   const [availableTimes, setAvailableTimes] = useState<Set<TimeSlot>>(new Set());
@@ -80,7 +81,7 @@ const PostAvailabilityModal: React.FC<PostAvailabilityModalProps> = ({ isOpen, o
         </div>
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
             <CheckboxGroup title="I'm looking for..." options={availabilityTypes} selected={lookingFor} onChange={(val) => handleCheckboxChange(setLookingFor, val)} />
-            <CheckboxGroup title="My preferred roles are..." options={Object.values(Role)} selected={roles} onChange={(val) => handleCheckboxChange(setRoles, val)} />
+            <CheckboxGroup title="My preferred roles are..." options={roleDetails.map(r => r.name)} selected={roles} onChange={(val) => handleCheckboxChange(setRoles, val)} />
             <CheckboxGroup title="I'm available on these days..." options={weekDays} selected={availableDays} onChange={(val) => handleCheckboxChange(setAvailableDays, val)} />
             <CheckboxGroup title="I'm available during these times..." options={timeSlots} selected={availableTimes} onChange={(val) => handleCheckboxChange(setAvailableTimes, val)} />
              <div>

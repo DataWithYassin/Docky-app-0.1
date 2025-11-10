@@ -1,27 +1,52 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Shift, User, Role, ShiftStatus } from '../types';
-import { ChartBarIcon, CurrencyEuroIcon, LocationIcon, BriefcaseIcon, UsersIcon, CheckCircleIcon, CalendarIcon, ClockIcon, SparklesIcon } from './Icons';
+import { ChartBarIcon, CurrencyEuroIcon, LocationIcon, BriefcaseIcon, UsersIcon, CheckCircleIcon, CalendarIcon, ClockIcon, SparklesIcon, TrendingUpIcon, ChevronDownIcon } from './Icons';
 
 interface InsightsViewProps {
   shifts: Shift[];
   users: User[];
 }
 
-const InsightCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className = '' }) => (
-    <div className={`bg-white p-6 rounded-xl shadow-md flex flex-col ${className}`}>
-        <div className="flex items-center gap-3 mb-4">
-            <div className="bg-slate-100 p-3 rounded-full">
-                {icon}
-            </div>
-            <h3 className="text-xl font-bold text-primary">{title}</h3>
+const CompactStatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; }> = ({ title, value, icon }) => (
+    <div className="bg-white p-4 rounded-xl shadow-md flex items-center gap-4 flex-1">
+        <div className="bg-slate-100 p-3 rounded-lg">
+            {icon}
         </div>
-        <div className="flex-grow">
-            {children}
+        <div>
+            <p className="text-2xl font-bold text-primary">{value}</p>
+            <p className="text-slate-500 text-sm font-medium">{title}</p>
         </div>
     </div>
 );
 
+const AccordionItem: React.FC<{title: string, isOpen: boolean, onClick: () => void, children: React.ReactNode, icon: React.ReactNode}> = ({ title, isOpen, onClick, children, icon }) => (
+    <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <h2>
+            <button type="button" onClick={onClick} className="flex justify-between items-center w-full p-6 font-semibold text-left text-primary hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3">
+                    <div className="bg-slate-100 p-3 rounded-full">
+                        {icon}
+                    </div>
+                    <span className="text-xl">{title}</span>
+                </div>
+                <ChevronDownIcon className={`w-6 h-6 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+        </h2>
+        {isOpen && (
+            <div className="p-6 bg-white border-t border-slate-200">
+                {children}
+            </div>
+        )}
+    </div>
+);
+
+
 const InsightsView: React.FC<InsightsViewProps> = ({ shifts, users }) => {
+    const [openAccordion, setOpenAccordion] = useState<string | null>('roles');
+
+    const toggleAccordion = (id: string) => {
+        setOpenAccordion(openAccordion === id ? null : id);
+    };
 
     const avgRatesByRole = useMemo(() => {
         const rateMap: { [key in Role]?: { total: number; count: number } } = {};
@@ -87,7 +112,6 @@ const InsightsView: React.FC<InsightsViewProps> = ({ shifts, users }) => {
         const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const dayCounts = Array(7).fill(0);
         shifts.forEach(shift => {
-            // Add T00:00:00 to ensure consistent date parsing across timezones
             const dayIndex = new Date(shift.date + 'T00:00:00').getDay();
             dayCounts[dayIndex]++;
         });
@@ -122,129 +146,119 @@ const InsightsView: React.FC<InsightsViewProps> = ({ shifts, users }) => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-10">
-        <h2 className="text-4xl font-extrabold text-primary tracking-tighter">Market Insights</h2>
-        <p className="text-slate-600 mt-2 max-w-2xl mx-auto">Discover trends in the on-demand shift market to make smarter decisions.</p>
+      <div className="bg-white/80 backdrop-blur-md shadow-sm rounded-xl p-8 mb-10">
+        <div className="text-center">
+          <h2 className="text-4xl font-extrabold text-primary tracking-tighter">Market Insights</h2>
+          <p className="text-slate-600 mt-2 max-w-2xl mx-auto">Discover trends in the on-demand shift market to make smarter decisions.</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <CompactStatCard title="Active Job Seekers" value={platformStats.jobSeekers} icon={<UsersIcon className="w-6 h-6 text-primary" />} />
+        <CompactStatCard title="Registered Businesses" value={platformStats.businesses} icon={<BriefcaseIcon className="w-6 h-6 text-primary" />} />
+        <CompactStatCard title="Completed Shifts" value={platformStats.completedShifts} icon={<CheckCircleIcon className="w-6 h-6 text-primary" />} />
+        <CompactStatCard title="Completion Rate" value={`${completionRate.toFixed(0)}%`} icon={<TrendingUpIcon className="w-6 h-6 text-primary" />} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        
-        {/* Average Hourly Rate */}
-        <InsightCard title="Average Hourly Rate by Role" icon={<CurrencyEuroIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-2">
-            <div className="space-y-4">
-                {avgRatesByRole.map(({ role, avgRate }) => (
-                    <div key={role} className="flex items-center gap-4">
-                        <span className="font-semibold text-slate-600 w-28 text-sm">{role}</span>
-                        <div className="flex-grow bg-slate-100 rounded-full h-6 relative">
-                            <div 
-                                className="h-6 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
-                                style={{ width: `${(avgRate / maxAvgRate) * 100}%` }}
-                            ></div>
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-white mix-blend-lighten">€{avgRate.toFixed(2)}/hr</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </InsightCard>
-
-        {/* Platform Stats */}
-        <InsightCard title="Platform Statistics" icon={<ChartBarIcon className="w-6 h-6 text-slate-500" />}>
-             <div className="space-y-5 pt-2">
-                <div className="flex items-center gap-4">
-                    <div className="bg-slate-100 p-4 rounded-lg"><UsersIcon className="w-8 h-8 text-primary" /></div>
-                    <div>
-                        <p className="text-3xl font-bold text-primary">{platformStats.jobSeekers}</p>
-                        <p className="text-slate-500 text-sm">Active Job Seekers</p>
+      <div className="space-y-4">
+        <AccordionItem 
+            title="Role & Financial Insights" 
+            isOpen={openAccordion === 'roles'} 
+            onClick={() => toggleAccordion('roles')}
+            icon={<CurrencyEuroIcon className="w-6 h-6 text-slate-500" />}
+        >
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div>
+                    <h4 className="font-bold text-lg text-slate-800 mb-4">Average Hourly Rate by Role</h4>
+                    <div className="space-y-4">
+                        {avgRatesByRole.map(({ role, avgRate }) => (
+                            <div key={role} className="flex items-center gap-4">
+                                <span className="font-semibold text-slate-600 w-28 text-sm">{role}</span>
+                                <div className="flex-grow bg-slate-100 rounded-full h-6 relative">
+                                    <div 
+                                        className="h-6 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
+                                        style={{ width: `${(avgRate / maxAvgRate) * 100}%` }}
+                                    ></div>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-white mix-blend-lighten">€{avgRate.toFixed(2)}/hr</span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="bg-slate-100 p-4 rounded-lg"><BriefcaseIcon className="w-8 h-8 text-primary" /></div>
+                <div className="space-y-8">
                     <div>
-                        <p className="text-3xl font-bold text-primary">{platformStats.businesses}</p>
-                        <p className="text-slate-500 text-sm">Registered Businesses</p>
+                        <h4 className="font-bold text-lg text-slate-800 mb-4">Most In-Demand Roles</h4>
+                        <ul className="space-y-3">
+                            {roleDemand.map(({ role, count }, index) => (
+                                <li key={role} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                                    <div className="flex items-center"><span className="text-lg font-bold text-slate-400 w-8">{index + 1}.</span><span className="font-semibold text-primary">{role}</span></div>
+                                    <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-lg text-slate-800 mb-4">Most Common Requirements</h4>
+                        <ul className="space-y-3">
+                            {topRequirements.map(({ name, count }) => (
+                                 <li key={name} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                                    <span className="font-semibold text-primary">{name}</span>
+                                    <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} times</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="bg-slate-100 p-4 rounded-lg"><CheckCircleIcon className="w-8 h-8 text-primary" /></div>
+            </div>
+        </AccordionItem>
+
+        <AccordionItem 
+            title="Time & Location Insights" 
+            isOpen={openAccordion === 'time'} 
+            onClick={() => toggleAccordion('time')}
+            icon={<LocationIcon className="w-6 h-6 text-slate-500" />}
+        >
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div>
+                    <h4 className="font-bold text-lg text-slate-800 mb-4">Peak Hiring Days</h4>
+                     <div className="flex justify-between items-end h-full pt-4">
+                        {peakDays.map(({ day, count }) => (
+                            <div key={day} className="flex flex-col items-center w-full">
+                                <div className="text-sm font-bold text-primary">{count}</div>
+                                <div className="w-4/5 h-32 bg-slate-100 rounded-t-lg relative">
+                                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-400 to-orange-500 rounded-t-lg" style={{ height: `${(count / (maxDayCount || 1)) * 100}%` }}></div>
+                                </div>
+                                <div className="text-xs font-semibold text-slate-500 mt-1">{day}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-8">
+                     <div>
+                        <h4 className="font-bold text-lg text-slate-800 mb-4">Busiest Shift Times</h4>
+                        <ul className="space-y-3">
+                            {busiestTimes.map(({ time, count }) => (
+                                 <li key={time} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                                    <span className="font-semibold text-primary">{time}</span>
+                                    <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                     <div>
-                        <p className="text-3xl font-bold text-primary">{platformStats.completedShifts}</p>
-                        <p className="text-slate-500 text-sm">Completed Shifts</p>
+                        <h4 className="font-bold text-lg text-slate-800 mb-4">Top Hiring Locations</h4>
+                        <ul className="space-y-3">
+                            {topLocations.map(({ location, count }, index) => (
+                                 <li key={location} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
+                                    <div className="flex items-center"><span className="text-lg font-bold text-slate-400 w-8">{index + 1}.</span><span className="font-semibold text-primary">{location}</span></div>
+                                    <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>
-        </InsightCard>
-
-        {/* Shift Completion Rate */}
-        <InsightCard title="Shift Completion Rate" icon={<CheckCircleIcon className="w-6 h-6 text-slate-500" />}>
-            <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-6xl font-extrabold text-green-500">{completionRate.toFixed(0)}%</p>
-                <p className="text-slate-500 mt-2 text-center">of filled shifts were successfully completed.</p>
-            </div>
-        </InsightCard>
-
-        {/* Most In-Demand Roles */}
-        <InsightCard title="Most In-Demand Roles" icon={<BriefcaseIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-1">
-            <ul className="space-y-3">
-                {roleDemand.map(({ role, count }, index) => (
-                    <li key={role} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <div className="flex items-center"><span className="text-lg font-bold text-slate-400 w-8">{index + 1}.</span><span className="font-semibold text-primary">{role}</span></div>
-                        <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
-                    </li>
-                ))}
-            </ul>
-        </InsightCard>
-        
-        {/* Top Hiring Locations */}
-        <InsightCard title="Top Hiring Locations" icon={<LocationIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-1">
-            <ul className="space-y-3">
-                {topLocations.map(({ location, count }, index) => (
-                     <li key={location} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <div className="flex items-center"><span className="text-lg font-bold text-slate-400 w-8">{index + 1}.</span><span className="font-semibold text-primary">{location}</span></div>
-                        <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
-                    </li>
-                ))}
-            </ul>
-        </InsightCard>
-        
-        {/* Peak Hiring Days */}
-        <InsightCard title="Peak Hiring Days" icon={<CalendarIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-2">
-            <div className="flex justify-between items-end h-full pt-4">
-                {peakDays.map(({ day, count }) => (
-                    <div key={day} className="flex flex-col items-center w-full">
-                        <div className="text-sm font-bold text-primary">{count}</div>
-                        <div className="w-4/5 h-32 bg-slate-100 rounded-t-lg relative">
-                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-400 to-orange-500 rounded-t-lg" style={{ height: `${(count / (maxDayCount || 1)) * 100}%` }}></div>
-                        </div>
-                        <div className="text-xs font-semibold text-slate-500 mt-1">{day}</div>
-                    </div>
-                ))}
-            </div>
-        </InsightCard>
-        
-        {/* Busiest Shift Times */}
-        <InsightCard title="Busiest Shift Times" icon={<ClockIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-2">
-             <ul className="space-y-3">
-                {busiestTimes.map(({ time, count }) => (
-                     <li key={time} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <span className="font-semibold text-primary">{time}</span>
-                        <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} shifts</span>
-                    </li>
-                ))}
-            </ul>
-        </InsightCard>
-
-        {/* Top Requirements */}
-        <InsightCard title="Most Common Requirements" icon={<SparklesIcon className="w-6 h-6 text-slate-500" />} className="lg:col-span-2">
-             <ul className="space-y-3">
-                {topRequirements.map(({ name, count }) => (
-                     <li key={name} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <span className="font-semibold text-primary">{name}</span>
-                        <span className="font-bold text-accent bg-cyan-100 px-2 py-0.5 rounded-full text-sm">{count} times</span>
-                    </li>
-                ))}
-            </ul>
-        </InsightCard>
-
+        </AccordionItem>
       </div>
     </div>
   );

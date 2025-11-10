@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Job, Role, User, ApplicationStatus } from '../types';
+import { Job, Role, User, ApplicationStatus, RoleDetail } from '../types';
 import { LocationIcon, VerificationIcon, CheckCircleIcon, UsersIcon, ClockIcon, XCircleIcon } from './Icons';
 
 interface JobCardProps {
@@ -11,15 +11,8 @@ interface JobCardProps {
   isLoggedIn: boolean;
   currentUser: User | null;
   distance?: number | null;
+  roleDetails: RoleDetail[];
 }
-
-const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
-    [Role.Chef]: { emoji: '👨‍🍳', classes: 'bg-orange-100 text-orange-800' },
-    [Role.Barista]: { emoji: '☕️', classes: 'bg-amber-100 text-amber-800' },
-    [Role.Waiter]: { emoji: '🤵', classes: 'bg-blue-100 text-blue-800' },
-    [Role.Host]: { emoji: '👋', classes: 'bg-rose-100 text-rose-800' },
-    [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
-};
 
 const applicationStatusInfo: Record<ApplicationStatus, { text: string; classes: string; icon: React.ReactNode; }> = {
     [ApplicationStatus.Pending]: { text: 'Pending', classes: 'bg-yellow-100 text-yellow-800', icon: <ClockIcon className="w-4 h-4" /> },
@@ -29,7 +22,7 @@ const applicationStatusInfo: Record<ApplicationStatus, { text: string; classes: 
 };
 
 
-const JobCard: React.FC<JobCardProps> = ({ job, onApply, applicationStatus, isLoggedIn, currentUser, distance }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, onApply, applicationStatus, isLoggedIn, currentUser, distance, roleDetails }) => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(`${dateString}T00:00:00`);
@@ -55,7 +48,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, applicationStatus, isLo
     return `posted ${days}d ago`;
   };
 
-  const badge = roleBadges[job.role] || { emoji: '💼', classes: 'bg-cyan-100 text-cyan-800' };
+  const badge = roleDetails.find(r => r.name === job.role) || { emoji: '💼', classes: 'bg-cyan-100 text-cyan-800' };
   const isJobSeeker = isLoggedIn && currentUser?.userType === 'JobSeeker';
 
   return (

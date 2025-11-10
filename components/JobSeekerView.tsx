@@ -1,6 +1,7 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { User, Shift, ShiftStatus, View, Application, ApplicationStatus, Job, SavedSearch, SavedSearchFilters } from '../types';
+import { User, Shift, ShiftStatus, View, Application, ApplicationStatus, Job, SavedSearch, SavedSearchFilters, RoleDetail } from '../types';
 import { DocumentTextIcon, CalendarIcon, TrendingUpIcon, CheckCircleIcon, XCircleIcon, ClockIcon, BriefcaseIcon, BookmarkIcon, BookmarkSlashIcon, BellIcon } from './Icons';
 import CalendarView from './CalendarView';
 
@@ -16,6 +17,7 @@ interface JobSeekerViewProps {
     onOpenChat: (shiftId: string) => void;
     onDeleteSearch: (searchId: string) => void;
     onApplySavedSearch: (filters: SavedSearchFilters) => void;
+    roleDetails: RoleDetail[];
 }
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; }> = ({ title, value, icon }) => (
@@ -121,7 +123,7 @@ const SavedSearchCard: React.FC<{ search: SavedSearch; onDelete: (id: string) =>
 };
 
 
-const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, jobs, savedSearches, onNavigate, onApply, isLoggedIn, onConfirmShift, onOpenChat, onDeleteSearch, onApplySavedSearch }) => {
+const JobSeekerView: React.FC<JobSeekerViewProps> = ({ user, shifts, jobs, savedSearches, onNavigate, onApply, isLoggedIn, onConfirmShift, onOpenChat, onDeleteSearch, onApplySavedSearch, roleDetails }) => {
     const [activeTab, setActiveTab] = useState<'Dashboard' | 'My Applications' | 'Saved Searches' | 'My Jobs'>('Dashboard');
     const [calendarDate, setCalendarDate] = useState(new Date());
 

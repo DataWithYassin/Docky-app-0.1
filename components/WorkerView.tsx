@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Shift, Role, User, Job, SavedSearchFilters } from '../types';
+import { Shift, Role, User, Job, SavedSearchFilters, RoleDetail } from '../types';
 import ShiftCard from './ShiftCard';
 import JobCard from './JobCard';
 import { BriefcaseIcon, LocationIcon, ClockIcon, ChevronDownIcon, CalendarIcon, XCircleIcon, ListBulletIcon, CrosshairsIcon, BookmarkIcon, TagIcon, BellIcon } from './Icons';
@@ -228,11 +228,12 @@ interface WorkerViewProps {
   onSaveSearch: (name: string, filters: SavedSearchFilters, notificationsEnabled: boolean) => void;
   appliedFilters: SavedSearchFilters | null;
   onClearAppliedFilters: () => void;
+  roleDetails: RoleDetail[];
 }
 
-const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyForJob, isLoggedIn, user, onSaveSearch, appliedFilters, onClearAppliedFilters }) => {
+const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyForJob, isLoggedIn, user, onSaveSearch, appliedFilters, onClearAppliedFilters, roleDetails }) => {
   const [postType, setPostType] = useState<'All' | 'Part-time Jobs' | 'Single Shifts'>('All');
-  const [filterRoles, setFilterRoles] = useState<Set<Role>>(new Set());
+  const [filterRoles, setFilterRoles] = useState<Set<string>>(new Set());
   const [filterCities, setFilterCities] = useState<Set<string>>(new Set());
   const [filterTime, setFilterTime] = useState<ShiftTime>('All');
   const [filterDate, setFilterDate] = useState<string>('All'); // 'All' or 'YYYY-MM-DD'
@@ -373,9 +374,13 @@ const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyF
             const timeMatch = filterTime === 'All' || getShiftTimeCategory(item.startTime) === filterTime;
             const dateMatch = filterDate === 'All' || item.date === filterDate;
             return timeMatch && dateMatch;
+        } else { // It's a Job
+            // If a specific date is selected, jobs should not be shown as they don't occur on a single day.
+            if (filterDate !== 'All') {
+                return false;
+            }
+            return true;
         }
-        
-        return true; // It's a Job, passes if location and role match
     };
     
     const jobs = (postType === 'All' || postType === 'Part-time Jobs') ? availableJobs.filter(filterFn) : [];
@@ -399,8 +404,7 @@ const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyF
 
   }, [availableShifts, availableJobs, postType, filterRoles, filterCities, filterTime, filterDate, userLocation, searchRadius]);
 
-  // FIX: Cast Object.values(Role) to Role[] to satisfy the type constraints of MultiSelectFilterDropdown.
-  const roles = Object.values(Role) as Role[];
+  const roles = roleDetails.map(r => r.name);
   const cities = useMemo(() => {
     const allLocations = [...availableShifts.map(s => s.location), ...availableJobs.map(j => j.location)];
     return [...Array.from(new Set(allLocations.map(location => getCityFromLocation(location))))];
@@ -419,130 +423,152 @@ const WorkerView: React.FC<WorkerViewProps> = ({ shifts, jobs, onApply, onApplyF
         <p className="text-slate-600 mt-2 max-w-2xl mx-auto">Browse part-time jobs and single shifts. Your next opportunity is just a click away.</p>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md mb-8 sticky top-20 z-30">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-          <SingleSelectFilterDropdown title="Job Type" items={jobTypes} selected={postType} onSelect={(type) => setPostType(type as 'All' | 'Part-time Jobs' | 'Single Shifts')} icon={<ListBulletIcon className="w-5 h-5" />} />
-          <MultiSelectFilterDropdown title="Role" items={roles} selectedItems={filterRoles as Set<string>} onToggleItem={(item) => handleRoleToggle(item as Role)} onClear={() => setFilterRoles(new Set())} icon={<BriefcaseIcon className="w-5 h-5" />} />
-          <MultiSelectFilterDropdown title="City" items={cities} selectedItems={filterCities} onToggleItem={handleCityToggle} onClear={() => setFilterCities(new Set())} icon={<LocationIcon className="w-5 h-5" />} isDisabled={!!userLocation} />
-          
-          {!userLocation ? (
-            <button onClick={handleUseMyLocation} disabled={isLocating} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg text-left focus:outline-none ring-1 ring-slate-300 transition-all hover:ring-slate-400 disabled:bg-slate-100 disabled:cursor-wait">
-              <CrosshairsIcon className="w-5 h-5 text-slate-500 flex-shrink-0" />
-              <span className="font-semibold text-primary text-sm truncate">{isLocating ? 'Locating...' : 'Find Near Me'}</span>
-            </button>
-          ) : (
-            <div className="relative">
-                <SingleSelectFilterDropdown title="Radius" items={radiusOptions} selected={`${searchRadius} km`} onSelect={(item) => setSearchRadius(parseInt(item.split(' ')[0]))} icon={<LocationIcon className="w-5 h-5" />} />
-                <button onClick={clearLocation} className="absolute top-1/2 right-2 -translate-y-1/2 text-slate-400 hover:text-red-500 p-1 z-10">
-                    <XCircleIcon className="w-5 h-5" />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <aside className="lg:col-span-1 lg:sticky lg:top-24">
+          <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-md">
+            <h3 className="text-lg font-bold text-primary mb-4">Filters</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <SingleSelectFilterDropdown 
+                title="Job Type" 
+                items={jobTypes} 
+                selected={postType} 
+                onSelect={(type) => {
+                    const newPostType = type as 'All' | 'Part-time Jobs' | 'Single Shifts';
+                    setPostType(newPostType);
+                    if (newPostType === 'Part-time Jobs') {
+                        setFilterTime('All');
+                        setFilterDate('All');
+                    }
+                }} 
+                icon={<ListBulletIcon className="w-5 h-5" />} 
+              />
+              <MultiSelectFilterDropdown title="Role" items={roles} selectedItems={filterRoles} onToggleItem={(item) => handleRoleToggle(item as Role)} onClear={() => setFilterRoles(new Set())} icon={<BriefcaseIcon className="w-5 h-5" />} />
+              <MultiSelectFilterDropdown title="City" items={cities} selectedItems={filterCities} onToggleItem={handleCityToggle} onClear={() => setFilterCities(new Set())} icon={<LocationIcon className="w-5 h-5" />} isDisabled={!!userLocation} />
+              
+              {!userLocation ? (
+                <button onClick={handleUseMyLocation} disabled={isLocating} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white rounded-lg text-left focus:outline-none ring-1 ring-slate-300 transition-all hover:ring-slate-400 disabled:bg-slate-100 disabled:cursor-wait">
+                  <CrosshairsIcon className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                  <span className="font-semibold text-primary text-sm truncate">{isLocating ? 'Locating...' : 'Find Near Me'}</span>
                 </button>
-            </div>
-          )}
-          
-          {(postType === 'All' || postType === 'Single Shifts') && (
-            <>
-              <SingleSelectFilterDropdown title="Shift Time" items={shiftTimes} selected={filterTime} onSelect={(time) => setFilterTime(time as ShiftTime)} icon={<ClockIcon className="w-5 h-5" />} />
-              <div className="relative w-full">
-                <div className="w-full flex items-center justify-between px-4 py-2 bg-white rounded-lg text-left ring-1 ring-slate-300">
-                    <div className="flex items-center gap-2 w-full">
-                        <label htmlFor="date-filter" className="text-slate-500"><CalendarIcon className="w-5 h-5" /></label>
-                        <div className="flex items-center justify-between w-full">
-                            <input
-                                id="date-filter"
-                                type="date"
-                                value={filterDate === 'All' ? '' : filterDate}
-                                onChange={(e) => setFilterDate(e.target.value || 'All')}
-                                className="font-semibold text-primary bg-transparent focus:outline-none w-full appearance-none text-sm"
-                            />
-                             {filterDate !== 'All' && (
-                                <button onClick={() => setFilterDate('All')} className="text-slate-400 hover:text-slate-600">
-                                    <XCircleIcon className="w-5 h-5" />
-                                </button>
-                            )}
+              ) : (
+                <div className="relative">
+                    <SingleSelectFilterDropdown title="Radius" items={radiusOptions} selected={`${searchRadius} km`} onSelect={(item) => setSearchRadius(parseInt(item.split(' ')[0]))} icon={<LocationIcon className="w-5 h-5" />} />
+                    <button onClick={clearLocation} className="absolute top-1/2 right-2 -translate-y-1/2 text-slate-400 hover:text-red-500 p-1 z-10">
+                        <XCircleIcon className="w-5 h-5" />
+                    </button>
+                </div>
+              )}
+              
+              {(postType === 'All' || postType === 'Single Shifts') && (
+                <>
+                  <SingleSelectFilterDropdown title="Shift Time" items={shiftTimes} selected={filterTime} onSelect={(time) => setFilterTime(time as ShiftTime)} icon={<ClockIcon className="w-5 h-5" />} />
+                  <div className="relative w-full">
+                    <div className="w-full flex items-center justify-between px-4 py-2 bg-white rounded-lg text-left ring-1 ring-slate-300">
+                        <div className="flex items-center gap-2 w-full">
+                            <label htmlFor="date-filter" className="text-slate-500"><CalendarIcon className="w-5 h-5" /></label>
+                            <div className="flex items-center justify-between w-full">
+                                <input
+                                    id="date-filter"
+                                    type="date"
+                                    value={filterDate === 'All' ? '' : filterDate}
+                                    onChange={(e) => setFilterDate(e.target.value || 'All')}
+                                    className="font-semibold text-primary bg-transparent focus:outline-none w-full appearance-none text-sm"
+                                />
+                                 {filterDate !== 'All' && (
+                                    <button onClick={() => setFilterDate('All')} className="text-slate-400 hover:text-slate-600">
+                                        <XCircleIcon className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        {isLoggedIn && user?.userType === 'JobSeeker' && (
-            <div className="mt-4 flex justify-end">
-                <button
-                    onClick={() => setIsSaveModalOpen(true)}
-                    disabled={!activeFilters}
-                    title={!activeFilters ? 'Apply at least one filter to save a search' : 'Save current search criteria'}
-                    className="flex items-center gap-2 text-sm font-semibold text-primary bg-slate-200/50 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                >
-                    <BookmarkIcon className="w-5 h-5" />
-                    Save Current Search
-                </button>
+                  </div>
+                </>
+              )}
             </div>
-        )}
-      </div>
+            {isLoggedIn && user?.userType === 'JobSeeker' && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                    <button
+                        onClick={() => setIsSaveModalOpen(true)}
+                        disabled={!activeFilters}
+                        title={!activeFilters ? 'Apply at least one filter to save a search' : 'Save current search criteria'}
+                        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-primary bg-slate-200/50 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    >
+                        <BookmarkIcon className="w-5 h-5" />
+                        Save Current Search
+                    </button>
+                </div>
+            )}
+          </div>
+        </aside>
 
-      <SaveSearchModal isOpen={isSaveModalOpen} onClose={() => setIsSaveModalOpen(false)} onSave={handleSaveSearch} />
+        <main className="lg:col-span-3">
+          <>
+            {jobsToShow.length > 0 && (
+                <div className="mb-12">
+                    <h3 className="text-2xl font-bold text-primary mb-6">Part-time Job Openings</h3>
+                    <div className="space-y-6">
+                        {jobsToShow.map(job => {
+                            const application = user?.applications?.find(app => app.jobId === job.id);
+                            const applicationStatus = application ? application.status : null;
+                            const distance = userLocation && job.coordinates ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, job.coordinates.lat, job.coordinates.lon) : null;
+                            return (
+                                <JobCard
+                                    key={job.id}
+                                    job={job}
+                                    onApply={onApplyForJob}
+                                    isLoggedIn={isLoggedIn}
+                                    applicationStatus={applicationStatus}
+                                    currentUser={user}
+                                    distance={distance}
+                                    roleDetails={roleDetails}
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
-      <>
-        {jobsToShow.length > 0 && (
-            <div className="mb-12">
-                <h3 className="text-2xl font-bold text-primary mb-6">Part-time Job Openings</h3>
-                <div className="space-y-6">
-                    {jobsToShow.map(job => {
-                        const application = user?.applications?.find(app => app.jobId === job.id);
-                        const applicationStatus = application ? application.status : null;
-                        const distance = userLocation && job.coordinates ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, job.coordinates.lat, job.coordinates.lon) : null;
+            {shiftsToShow.length > 0 && (
+                <div>
+                     <h3 className="text-2xl font-bold text-primary mb-6">Available Single Shifts</h3>
+                    <div className="space-y-6">
+                    {shiftsToShow.map(shift => {
+                        const distance = userLocation && shift.coordinates ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, shift.coordinates.lat, shift.coordinates.lon) : null;
                         return (
-                            <JobCard
-                                key={job.id}
-                                job={job}
-                                onApply={onApplyForJob}
+                            <ShiftCard
+                                key={shift.id}
+                                shift={shift}
+                                onApply={onApply}
                                 isLoggedIn={isLoggedIn}
-                                applicationStatus={applicationStatus}
+                                isApplied={user?.applications?.some(app => app.shiftId === shift.id) ?? false}
                                 currentUser={user}
                                 distance={distance}
+                                roleDetails={roleDetails}
                             />
                         );
                     })}
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
 
-        {shiftsToShow.length > 0 && (
-            <div>
-                 <h3 className="text-2xl font-bold text-primary mb-6">Available Single Shifts</h3>
-                <div className="space-y-6">
-                {shiftsToShow.map(shift => {
-                    const distance = userLocation && shift.coordinates ? getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, shift.coordinates.lat, shift.coordinates.lon) : null;
-                    return (
-                        <ShiftCard
-                            key={shift.id}
-                            shift={shift}
-                            onApply={onApply}
-                            isLoggedIn={isLoggedIn}
-                            isApplied={user?.applications?.some(app => app.shiftId === shift.id) ?? false}
-                            currentUser={user}
-                            distance={distance}
-                        />
-                    );
-                })}
+            {jobsToShow.length === 0 && shiftsToShow.length === 0 && (
+                 <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
+                    <h3 className="text-xl font-semibold text-primary">
+                        {postType === 'Part-time Jobs' ? 'No Jobs Available' : postType === 'Single Shifts' ? 'No Shifts Available' : 'No Opportunities Found'}
+                    </h3>
+                    <p className="text-slate-500 mt-2">
+                        {postType === 'Part-time Jobs' ? 'There are no part-time jobs matching your criteria. Please check back later!' :
+                         postType === 'Single Shifts' ? 'There are no open shifts matching your criteria. Please check back later!' :
+                         'There are no jobs or shifts matching your criteria. Try broadening your search filters!'}
+                    </p>
                 </div>
-            </div>
-        )}
+            )}
+          </>
+        </main>
+      </div>
 
-        {jobsToShow.length === 0 && shiftsToShow.length === 0 && (
-             <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold text-primary">
-                    {postType === 'Part-time Jobs' ? 'No Jobs Available' : postType === 'Single Shifts' ? 'No Shifts Available' : 'No Opportunities Found'}
-                </h3>
-                <p className="text-slate-500 mt-2">
-                    {postType === 'Part-time Jobs' ? 'There are no part-time jobs matching your criteria. Please check back later!' :
-                     postType === 'Single Shifts' ? 'There are no open shifts matching your criteria. Please check back later!' :
-                     'There are no jobs or shifts matching your criteria. Try broadening your search filters!'}
-                </p>
-            </div>
-        )}
-      </>
+      <SaveSearchModal isOpen={isSaveModalOpen} onClose={() => setIsSaveModalOpen(false)} onSave={handleSaveSearch} />
     </div>
   );
 };

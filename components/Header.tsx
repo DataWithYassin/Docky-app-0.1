@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, User, Role, Notification } from '../types';
+import { View, User, Role, Notification, RoleDetail } from '../types';
 import { BellIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, FlagUKIcon, FlagESIcon, FlagPTIcon } from './Icons';
 import { useLanguage, Language } from '../context/LanguageContext';
 import { useTranslations } from '../hooks/useTranslations';
@@ -11,15 +11,6 @@ const languageOptions: Record<Language, { name: string, flag: React.ReactNode }>
     pt: { name: 'Português', flag: <FlagPTIcon className="w-5 h-5 rounded-sm" /> },
 };
 
-const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
-    [Role.Chef]: { emoji: '👨‍🍳', classes: 'bg-orange-100 text-orange-800' },
-    [Role.Barista]: { emoji: '☕️', classes: 'bg-amber-100 text-amber-800' },
-    [Role.Waiter]: { emoji: '🤵', classes: 'bg-indigo-100 text-indigo-800' },
-    [Role.Host]: { emoji: '👋', classes: 'bg-rose-100 text-rose-800' },
-    [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
-};
-
-
 const Header: React.FC<{
   currentView: View;
   onNavigate: (view: View) => void;
@@ -29,7 +20,8 @@ const Header: React.FC<{
   notifications: Notification[];
   onNotificationClick: (notification: Notification) => void;
   onMarkAllNotificationsAsRead: () => void;
-}> = ({ currentView, onNavigate, isLoggedIn, user, onLogout, notifications, onNotificationClick, onMarkAllNotificationsAsRead }) => {
+  roleDetails: RoleDetail[];
+}> = ({ currentView, onNavigate, isLoggedIn, user, onLogout, notifications, onNotificationClick, onMarkAllNotificationsAsRead, roleDetails }) => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -66,7 +58,7 @@ const Header: React.FC<{
   const NavLink: React.FC<{ view: View, children: React.ReactNode }> = ({ view, children }) => (
     <button
       onClick={() => onNavigate(view)}
-      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
         currentView === view
         ? 'bg-primary text-white'
         : 'text-slate-600 hover:bg-slate-200 hover:text-primary'
@@ -150,7 +142,7 @@ const Header: React.FC<{
             <span className="text-2xl">🐳</span>
             <h1 className="text-xl font-bold text-primary tracking-tighter">Docky</h1>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-2">
             <NavLink view="home">{t('home')}</NavLink>
             <NavLink view="jobs">{t('jobs')}</NavLink>
             <NavLink view="availability">Find Talent</NavLink>
@@ -224,11 +216,15 @@ const Header: React.FC<{
                 >
                   <img src={user.avatar} alt="user avatar" className="w-8 h-8 rounded-full" />
                   <span className="text-sm font-medium text-slate-700 hidden sm:block">{user.name.split(' ')[0]}</span>
-                  {user.userType === 'JobSeeker' && roleBadges[user.role] && (
-                     <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${roleBadges[user.role].classes}`}>
-                       {roleBadges[user.role].emoji}
-                     </span>
-                  )}
+                  {user.userType === 'JobSeeker' && (() => {
+                     const roleInfo = roleDetails.find(r => r.name === user.role);
+                     if (!roleInfo) return null;
+                     return (
+                       <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${roleInfo.classes}`}>
+                         {roleInfo.emoji}
+                       </span>
+                     );
+                  })()}
                   <ChevronDownIcon className="w-4 h-4 text-slate-500" />
                 </button>
                 {isProfileDropdownOpen && (
@@ -346,14 +342,14 @@ const Header: React.FC<{
                             <MobileNavLink
                                 view="login"
                                 isButton
-                                buttonStyle="w-full text-primary font-bold px-4 py-2 rounded-full text-sm bg-slate-100 hover:bg-slate-200 transition-colors"
+                                buttonStyle="w-full text-primary font-bold px-4 py-3 rounded-full text-sm bg-slate-100 hover:bg-slate-200 transition-colors"
                             >
                                 {t('login')}
                             </MobileNavLink>
                             <MobileNavLink
                                 view="register"
                                 isButton
-                                buttonStyle="w-full bg-accent text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-accent-hover transition-colors"
+                                buttonStyle="w-full bg-accent text-white px-4 py-3 rounded-full text-sm font-bold hover:bg-accent-hover transition-colors"
                             >
                                 {t('register')}
                             </MobileNavLink>

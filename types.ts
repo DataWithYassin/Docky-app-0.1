@@ -16,12 +16,12 @@ export type View =
   | 'chatsList'
   | 'chat';
 
-export enum Role {
-  Chef = 'Chef',
-  Barista = 'Barista',
-  Waiter = 'Waiter',
-  Host = 'Host',
-  KitchenStaff = 'Kitchen Staff',
+export type Role = string;
+
+export interface RoleDetail {
+  name: Role;
+  emoji: string;
+  classes: string;
 }
 
 export enum ShiftStatus {
@@ -39,6 +39,7 @@ export enum ApplicationStatus {
 }
 
 export type UserType = 'JobSeeker' | 'Business' | 'Admin';
+export type UserStatus = 'Active' | 'Suspended' | 'Verified';
 
 export interface Experience {
     id: number;
@@ -81,6 +82,8 @@ export interface User {
     experience?: Experience[];
     applications?: Application[];
     totalEarnings?: number;
+    status: UserStatus;
+    createdAt: string;
 }
 
 export interface Coordinates {

@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Role, Experience, View } from '../types';
+import { Role, Experience, View, RoleDetail } from '../types';
 
 interface JobSeekerRegistrationViewProps {
     onNavigate: (view: View) => void;
     onRegister: (formData: any) => void;
+    roleDetails: RoleDetail[];
 }
 
 const locationData: { [key: string]: { code: string; cities: string[]; flag: string; } } = {
@@ -14,7 +15,7 @@ const locationData: { [key: string]: { code: string; cities: string[]; flag: str
 };
 
 
-const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ onNavigate, onRegister }) => {
+const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ onNavigate, onRegister, roleDetails }) => {
     const [experiences, setExperiences] = useState<Experience[]>([]);
     const [languages, setLanguages] = useState<{ id: number; name: string; level: string }[]>([]);
     const [fileErrors, setFileErrors] = useState<{ cv?: string; idFile?: string }>({});
@@ -292,18 +293,18 @@ const JobSeekerRegistrationView: React.FC<JobSeekerRegistrationViewProps> = ({ o
             <div>
                 <label className="block text-sm font-medium text-slate-700">Preferred Job Categories (required)</label>
                 <div className="mt-1 grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border border-slate-300 rounded-md">
-                    {Object.values(Role).map(role => (
-                        <div key={role} className="flex items-center">
+                    {roleDetails.map(role => (
+                        <div key={role.name} className="flex items-center">
                             <input
-                                id={`job-${role}`}
+                                id={`job-${role.name}`}
                                 type="checkbox"
-                                value={role}
-                                checked={formData.preferredJobs.has(role)}
+                                value={role.name}
+                                checked={formData.preferredJobs.has(role.name)}
                                 onChange={handlePreferredJobChange}
                                 className="h-4 w-4 text-accent border-slate-300 rounded focus:ring-accent"
                             />
-                            <label htmlFor={`job-${role}`} className="ml-2 text-sm text-slate-700">
-                                {role}
+                            <label htmlFor={`job-${role.name}`} className="ml-2 text-sm text-slate-700">
+                                {role.name}
                             </label>
                         </div>
                     ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Role, Shift, User, Job, WeekDay, weekDays } from '../types';
+import { Role, Shift, User, Job, WeekDay, weekDays, RoleDetail } from '../types';
 
 type PartTimeJobData = Omit<Job, 'id' | 'businessName' | 'businessLogo' | 'talentId' | 'postedAt' | 'applicants'>;
 type ShiftData = Omit<Shift, 'id' | 'businessName' | 'businessLogo' | 'applicants' | 'status' | 'postedAt'>;
@@ -11,9 +11,10 @@ interface PostShiftModalProps {
   onAddJob: (job: PartTimeJobData) => void;
   currentUser: User | null;
   hiringTalent?: User | null;
+  roleDetails: RoleDetail[];
 }
 
-const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddShift, onAddJob, hiringTalent, currentUser }) => {
+const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddShift, onAddJob, hiringTalent, currentUser, roleDetails }) => {
   const [postType, setPostType] = useState<'shift' | 'part-time'>('shift');
   const [selectedDays, setSelectedDays] = useState<Set<WeekDay>>(new Set());
 
@@ -107,8 +108,8 @@ const PostShiftModal: React.FC<PostShiftModalProps> = ({ isOpen, onClose, onAddS
                 <div>
                     <label htmlFor="role" className="block text-sm font-medium text-slate-700">Role</label>
                     <select id="role" name="role" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-accent focus:border-accent sm:text-sm" defaultValue={hiringTalent?.role}>
-                        {Object.values(Role).map(role => (
-                            <option key={role} value={role}>{role}</option>
+                        {roleDetails.map(role => (
+                            <option key={role.name} value={role.name}>{role.name}</option>
                         ))}
                     </select>
                 </div>

@@ -1,16 +1,8 @@
 
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { AvailabilityPost, User, Role, AvailabilityType, availabilityTypes } from '../types';
+import { AvailabilityPost, User, Role, AvailabilityType, availabilityTypes, RoleDetail } from '../types';
 import { StarIcon, LocationIcon, BriefcaseIcon, ChevronDownIcon, ListBulletIcon } from './Icons';
-
-const roleBadges: Record<Role, { emoji: string; classes: string; }> = {
-    [Role.Chef]: { emoji: '👨‍🍳', classes: 'bg-orange-100 text-orange-800' },
-    [Role.Barista]: { emoji: '☕️', classes: 'bg-amber-100 text-amber-800' },
-    [Role.Waiter]: { emoji: '🤵', classes: 'bg-blue-100 text-blue-800' },
-    [Role.Host]: { emoji: '👋', classes: 'bg-rose-100 text-rose-800' },
-    [Role.KitchenStaff]: { emoji: '🔪', classes: 'bg-slate-200 text-slate-800' },
-};
 
 const lookingForBadgeClasses: Record<string, string> = {
     'Single Shifts': 'bg-slate-100 text-slate-800',
@@ -26,9 +18,10 @@ interface AvailabilityPostCardProps {
   onContact: (userId: string) => void;
   onHire: (userId: string) => void;
   onHireUnauthenticated: () => void;
+  roleDetails: RoleDetail[];
 }
 
-const AvailabilityPostCard: React.FC<AvailabilityPostCardProps> = ({ post, user, currentUser, isLoggedIn, onContact, onHire, onHireUnauthenticated }) => {
+const AvailabilityPostCard: React.FC<AvailabilityPostCardProps> = ({ post, user, currentUser, isLoggedIn, onContact, onHire, onHireUnauthenticated, roleDetails }) => {
   const isBusiness = isLoggedIn && currentUser?.userType === 'Business';
 
   const timeAgo = (dateString: string): string => {
@@ -46,17 +39,11 @@ const AvailabilityPostCard: React.FC<AvailabilityPostCardProps> = ({ post, user,
     return `posted ${days}d ago`;
   };
 
-  const badge = post.roles[0] ? roleBadges[post.roles[0]] : null;
+  const badge = post.roles[0] ? roleDetails.find(r => r.name === post.roles[0]) : null;
   
   const rolesText = post.roles.map(role => {
-    const emojiInfo = {
-        [Role.Waiter]: '🍽️',
-        [Role.Barista]: '☕',
-        [Role.KitchenStaff]: '👨‍🍳',
-        [Role.Chef]: '👨‍🍳',
-        [Role.Host]: '👋',
-    };
-    return `${emojiInfo[role] || '💼'} ${role}`;
+    const roleInfo = roleDetails.find(r => r.name === role);
+    return `${roleInfo?.emoji || '💼'} ${role}`;
   }).join(' | ');
 
   const lookingForSpans = post.lookingFor.map((lf, index) => (
@@ -177,6 +164,7 @@ interface AvailabilityViewProps {
   onContactTalent: (userId: string) => void;
   onHireTalent: (userId: string) => void;
   onHireUnauthenticated: () => void;
+  roleDetails: RoleDetail[];
 }
 
 const FilterDropdown: React.FC<{
@@ -255,6 +243,7 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
   onContactTalent,
   onHireTalent,
   onHireUnauthenticated,
+  roleDetails,
 }) => {
   const isJobSeeker = isLoggedIn && currentUser?.userType === 'JobSeeker';
 
@@ -269,7 +258,7 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
     });
   }, [availabilityPosts, filterRole, filterJobType]);
 
-  const roles: (Role | 'All')[] = ['All', ...Object.values(Role)];
+  const roles: (Role | 'All')[] = ['All', ...roleDetails.map(r => r.name)];
   // FIX: Cast availabilityTypes to a string array to satisfy readonly string[] constraint.
   const jobTypes: ('All' | AvailabilityType)[] = ['All', ...availabilityTypes as unknown as AvailabilityType[]];
 
@@ -312,6 +301,7 @@ const AvailabilityView: React.FC<AvailabilityViewProps> = ({
                 onContact={onContactTalent}
                 onHire={onHireTalent}
                 onHireUnauthenticated={onHireUnauthenticated}
+                roleDetails={roleDetails}
               />
             );
           })
