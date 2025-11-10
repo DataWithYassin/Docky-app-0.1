@@ -66,10 +66,10 @@ const Header: React.FC<{
   const NavLink: React.FC<{ view: View, children: React.ReactNode }> = ({ view, children }) => (
     <button
       onClick={() => onNavigate(view)}
-      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
         currentView === view
-        ? 'bg-slate-200 text-primary'
-        : 'text-slate-700 hover:bg-slate-200'
+        ? 'bg-primary text-white'
+        : 'text-slate-600 hover:bg-slate-200 hover:text-primary'
       }`}
     >
       {children}
@@ -82,9 +82,9 @@ const Header: React.FC<{
         onNavigate(view);
         setIsMobileMenuOpen(false);
       }}
-      className={isButton ? buttonStyle : `block w-full text-left px-4 py-3 text-base font-semibold transition-colors ${
+      className={isButton ? buttonStyle : `block w-full text-left px-4 py-3 text-base font-semibold transition-colors rounded-md ${
         currentView === view
-        ? 'bg-slate-200 text-primary'
+        ? 'bg-accent text-white'
         : 'text-slate-700 hover:bg-slate-100'
       }`}
     >
@@ -150,7 +150,7 @@ const Header: React.FC<{
             <span className="text-2xl">🐳</span>
             <h1 className="text-xl font-bold text-primary tracking-tighter">Docky</h1>
           </div>
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
             <NavLink view="home">{t('home')}</NavLink>
             <NavLink view="jobs">{t('jobs')}</NavLink>
             <NavLink view="availability">Find Talent</NavLink>
